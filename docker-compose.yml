@@ -305,6 +305,7 @@ services:
 
 networks:
   microhelium:
+    name: microhelium
     driver: bridge
 
 volumes:

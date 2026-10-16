@@ -1,67 +1,76 @@
 # MicroHelium Makefile
 # Docker commands for development and production
 
-.PHONY: help setup build up down restart dev logs shell migrate seed fresh test lint format deploy rollback smoke composer npm artisan check-buildx dev-tools
+.PHONY: help setup dev-up dev-up-cf dev-down prod-up prod-up-cf prod-down up-prod build up down restart dev logs shell migrate seed fresh test lint format deploy rollback smoke composer npm artisan check-buildx dev-tools cloudflare-up cloudflare-down cloudflare-status
 
 # Toolchain profile for compilers (maratona = ~2.1 GB, scripting = ~2.3 GB, funcional = ~4.5 GB, completo = ~9.4 GB)
 JUDGE_PROFILE ?= maratona
 
+# Flag para inicialização condicional do Cloudflare Tunnel (true/false)
+CLOUDFLARE ?= false
+
 # Execução padronizada do strip via container (Zero-Host)
-STRIP_BUILDERS_CMD = docker run --rm --user "$$(id -u):$$(id -g)" -v "$$(PWD):/app" -w /app python:3.12-alpine python3 docker/strip_builders.py
+STRIP_BUILDERS_CMD = docker run --rm --user "$$(id -u):$$(id -g)" -v "$(CURDIR):/app" -w /app python:3.12-alpine python3 docker/strip_builders.py
 
 # Default target
 help:
 	@echo "MicroHelium Docker Commands"
 	@echo ""
-	@echo "Setup:"
-	@echo "  make setup [JUDGE_PROFILE=...] - Initial project setup (default: maratona, ~2.1 GB vs ~9.4 GB do completo)"
-	@echo "  make build [JUDGE_PROFILE=...] - Build Docker images (profiles: maratona, scripting, funcional, completo)"
-	@echo "  make up          - Start all containers"
-	@echo "  make down        - Stop all containers"
-	@echo "  make restart     - Restart all containers"
+	@echo "Desenvolvimento (com Seeders):"
+	@echo "  make dev-up      - Constrói e inicializa DEV no perfil maratona (migrações + seeders + Vite/Mailpit)"
+	@echo "  make dev-up-cf   - Inicializa DEV junto com o Cloudflare Tunnel para acesso remoto"
+	@echo "  make dev-down    - Para os contêineres de desenvolvimento"
+	@echo ""
+	@echo "Produção (sem Seeders):"
+	@echo "  make prod-up     - Constrói e inicializa PROD no perfil maratona (migrações apenas, sem seeders)"
+	@echo "  make prod-up-cf  - Inicializa PROD junto com o Cloudflare Tunnel para acesso remoto"
+	@echo "  make prod-down   - Para os contêineres de produção"
+	@echo ""
+	@echo "Cloudflare Tunnel:"
+	@echo "  make cloudflare-up     - Inicializa o túnel Cloudflare (caso não esteja ativo)"
+	@echo "  make cloudflare-down   - Para o contêiner do Cloudflare tunnel"
+	@echo "  make cloudflare-status - Verifica o status do túnel Cloudflare"
+	@echo ""
+	@echo "Build & Ferramentas:"
+	@echo "  make build [JUDGE_PROFILE=...] - Compila as imagens Docker com perfil (default: maratona)"
+	@echo "  make up          - Sobe os contêineres padrão"
+	@echo "  make down        - Para os contêineres padrão"
+	@echo "  make dev-tools   - Inicia phpMyAdmin e ferramentas adicionais"
+	@echo "  make logs        - Exibe logs dos contêineres"
+	@echo "  make shell       - Abre shell no contêiner da aplicação"
 	@echo ""
 	@echo "One-Off CLI (Zero-Host):"
-	@echo "  make composer CMD=\"...\"  - Run Composer commands"
-	@echo "  make npm CMD=\"...\"       - Run NPM commands"
-	@echo "  make artisan CMD=\"...\"   - Run Artisan commands"
+	@echo "  make composer CMD=\"...\"  - Executa comandos do Composer"
+	@echo "  make npm CMD=\"...\"       - Executa comandos do NPM"
+	@echo "  make artisan CMD=\"...\"   - Executa comandos do Artisan"
 	@echo ""
-	@echo "Development:"
-	@echo "  make dev         - Start with development tools (Vite, Mailpit)"
-	@echo "  make logs        - View container logs"
-	@echo "  make shell       - Open shell in app container"
-	@echo "  make shell-db    - Open MySQL shell"
-	@echo "  make shell-redis - Open Redis CLI"
-	@echo ""
-	@echo "Laravel:"
-	@echo "  make migrate     - Run database migrations"
-	@echo "  make seed        - Run database seeders"
-	@echo "  make fresh       - Fresh migrate with seeders"
-	@echo "  make key         - Generate application key"
-	@echo "  make cache       - Clear all caches"
-	@echo "  make optimize    - Optimize application"
-	@echo ""
-	@echo "Queue:"
-	@echo "  make queue       - Start queue worker"
-	@echo "  make judge       - Start auto-judge worker"
-	@echo ""
-	@echo "Testing:"
-	@echo "  make test        - Run PHPUnit tests"
-	@echo "  make lint        - Run PHP linter"
-	@echo "  make format      - Format code with Pint"
-	@echo ""
-	@echo "Production:"
-	@echo "  make prod        - Build for production"
-	@echo "  make prod-up     - Start production containers"
-	@echo "  make deploy      - Build+tag a new image, roll it out, run smoke tests"
-	@echo "  make rollback PREV=<tag> - Re-point :prod at a previously built image, no rebuild"
-	@echo "  make smoke       - Run post-deploy smoke checks against the live stack"
+	@echo "Deploy & Testes:"
+	@echo "  make deploy      - Constrói, migra e promove imagens para produção"
+	@echo "  make rollback PREV=<tag> - Reverte para imagem anterior"
+	@echo "  make smoke       - Executa testes de fumaça pós-deploy"
+	@echo "  make test        - Executa testes PHPUnit"
 
 # =============================================================================
-# Setup
+# Desenvolvimento (com Seeders)
 # =============================================================================
 
-setup:
-	@bash scripts/docker-setup.sh
+dev-up: check-buildx
+	@JUDGE_PROFILE=$(JUDGE_PROFILE) RUN_SEEDERS=true COMPOSE_PROFILE=dev CLOUDFLARE=$(CLOUDFLARE) bash scripts/docker-setup.sh $(if $(filter true 1 yes,$(CLOUDFLARE)),--cloudflare)
+
+dev-up-cf:
+	@$(MAKE) dev-up CLOUDFLARE=true
+
+dev-down:
+	@docker compose --profile dev down
+	@if [ "$(CLOUDFLARE)" = "true" ] || [ "$(CLOUDFLARE)" = "1" ] || [ "$(CLOUDFLARE)" = "yes" ]; then $(MAKE) cloudflare-down; fi
+
+# Aliases de compatibilidade para desenvolvimento
+setup: dev-up
+dev: dev-up
+
+# =============================================================================
+# Build & Stack Padrão
+# =============================================================================
 
 check-buildx:
 	@docker buildx version >/dev/null 2>&1 || (echo "ERRO: docker-buildx nao encontrado. Instale com: sudo pacman -S docker-buildx (ou equivalente na sua distribuicao)." && exit 1)
@@ -71,25 +80,22 @@ build: check-buildx
 		echo "⚙️  Processando Dockerfiles slim via container Python..."; \
 		trap 'rm -f Dockerfile.slim Dockerfile.dev.slim Dockerfile.judge.slim' EXIT INT TERM; \
 		$(STRIP_BUILDERS_CMD); \
-		DOCKERFILE_APP=Dockerfile.slim DOCKERFILE_DEV=Dockerfile.dev.slim DOCKERFILE_JUDGE=Dockerfile.judge.slim JUDGE_PROFILE=$(JUDGE_PROFILE) docker compose build; \
+		DOCKERFILE_APP=Dockerfile.slim DOCKERFILE_DEV=Dockerfile.dev.slim DOCKERFILE_JUDGE=Dockerfile.judge.slim JUDGE_PROFILE=$(JUDGE_PROFILE) docker compose build app autojudge; \
 	else \
-		JUDGE_PROFILE=$(JUDGE_PROFILE) docker compose build; \
+		JUDGE_PROFILE=$(JUDGE_PROFILE) docker compose build app autojudge; \
 	fi
 
-up:
+up: check-buildx
+	@if ! docker image inspect microhelium-app:latest >/dev/null 2>&1 || ! docker image inspect microhelium-judge:latest >/dev/null 2>&1; then \
+		echo "📦 Imagens do MicroHelium não encontradas. Construindo no perfil $(JUDGE_PROFILE)..."; \
+		$(MAKE) build JUDGE_PROFILE=$(JUDGE_PROFILE); \
+	fi
 	@docker compose up -d
 
 down:
 	@docker compose down
 
 restart: down up
-
-# =============================================================================
-# Development
-# =============================================================================
-
-dev:
-	@docker compose --profile dev up -d
 
 dev-tools:
 	@docker compose --profile dev --profile tools up -d
@@ -213,7 +219,7 @@ npm-build:
 	@docker compose exec node npm run build
 
 # =============================================================================
-# Production
+# Produção (sem Seeders)
 # =============================================================================
 
 # IMAGE_TAG defaults to :prod here (not :latest) so `make prod`/`prod-up`
@@ -227,13 +233,70 @@ IMAGE_TAG ?= prod
 PROD_COMPOSE = docker compose -f docker-compose.yml -f docker-compose.prod.yml
 
 prod: check-buildx
-	@IMAGE_TAG=$(IMAGE_TAG) JUDGE_PROFILE=$(JUDGE_PROFILE) $(PROD_COMPOSE) build
+	@if [ "$(JUDGE_PROFILE)" = "maratona" ] || [ "$(JUDGE_PROFILE)" = "minimal" ]; then \
+		echo "⚙️  Processando Dockerfiles slim para produção via container Python..."; \
+		trap 'rm -f Dockerfile.slim Dockerfile.dev.slim Dockerfile.judge.slim' EXIT INT TERM; \
+		$(STRIP_BUILDERS_CMD); \
+		DOCKERFILE_APP=Dockerfile.slim DOCKERFILE_DEV=Dockerfile.dev.slim DOCKERFILE_JUDGE=Dockerfile.judge.slim IMAGE_TAG=$(IMAGE_TAG) JUDGE_PROFILE=$(JUDGE_PROFILE) $(PROD_COMPOSE) build app autojudge; \
+	else \
+		IMAGE_TAG=$(IMAGE_TAG) JUDGE_PROFILE=$(JUDGE_PROFILE) $(PROD_COMPOSE) build app autojudge; \
+	fi
 
-prod-up:
+prod-up: check-buildx
+	@rm -f public/hot
+	@if ! docker image inspect microhelium-app:$(IMAGE_TAG) >/dev/null 2>&1 || ! docker image inspect microhelium-judge:$(IMAGE_TAG) >/dev/null 2>&1; then \
+		echo "⚙️  Imagens de produção não encontradas. Construindo no perfil $(JUDGE_PROFILE)..."; \
+		$(MAKE) prod IMAGE_TAG=$(IMAGE_TAG) JUDGE_PROFILE=$(JUDGE_PROFILE); \
+	fi
+	@echo "Subindo MySQL e Redis com espera de healthcheck..."
+	@IMAGE_TAG=$(IMAGE_TAG) $(PROD_COMPOSE) up -d --wait --wait-timeout 120 db redis
+	@echo "Executando migrações do banco de dados (sem seeders)..."
+	@IMAGE_TAG=$(IMAGE_TAG) $(PROD_COMPOSE) run --rm -T artisan migrate --force
+	@echo "Iniciando todos os serviços de produção..."
 	@IMAGE_TAG=$(IMAGE_TAG) $(PROD_COMPOSE) up -d
+	@if [ "$(CLOUDFLARE)" = "true" ] || [ "$(CLOUDFLARE)" = "1" ] || [ "$(CLOUDFLARE)" = "yes" ]; then \
+		$(MAKE) cloudflare-up; \
+	fi
+
+prod-up-cf:
+	@$(MAKE) prod-up CLOUDFLARE=true
 
 prod-down:
-	@$(PROD_COMPOSE) down
+	@rm -f public/hot
+	@if [ "$(CLOUDFLARE)" = "true" ] || [ "$(CLOUDFLARE)" = "1" ] || [ "$(CLOUDFLARE)" = "yes" ]; then $(MAKE) cloudflare-down; fi
+	@IMAGE_TAG=$(IMAGE_TAG) $(PROD_COMPOSE) down
+
+# Aliases de conveniência para produção
+up-prod: prod-up
+
+# =============================================================================
+# Cloudflare Tunnel
+# =============================================================================
+
+CLOUDFLARE_COMPOSE = docker compose -f docker-compose.cloudflared.yml
+
+cloudflare-up:
+	@if docker ps --filter "name=^cloudflared$$" --filter "status=running" -q | grep -q .; then \
+		echo "🌐 Cloudflare tunnel (cloudflared) já está em execução."; \
+	else \
+		TOKEN=$$(grep -E '^TUNNEL_TOKEN=' .env 2>/dev/null | cut -d= -f2- | tr -d '\r"' || echo "$$TUNNEL_TOKEN"); \
+		if [ -z "$$TOKEN" ]; then \
+			echo "⚠️  AVISO: TUNNEL_TOKEN não configurado no .env. Cloudflare tunnel não foi iniciado."; \
+		else \
+			echo "🌐 Iniciando Cloudflare tunnel (cloudflared)..."; \
+			TUNNEL_TOKEN="$$TOKEN" $(CLOUDFLARE_COMPOSE) up -d || echo "⚠️  Falha ao iniciar cloudflared. A aplicação continuará funcionando localmente."; \
+		fi; \
+	fi
+
+cloudflare-down:
+	@if docker ps -a --filter "name=^cloudflared$$" -q | grep -q .; then \
+		echo "🛑 Parando Cloudflare tunnel..."; \
+		$(CLOUDFLARE_COMPOSE) down; \
+	fi
+
+cloudflare-status:
+	@echo "=== Status do Cloudflare Tunnel ==="
+	@docker ps -a --filter "name=^cloudflared$$"
 
 # =============================================================================
 # Deploy / Rollback (issue #54)
@@ -251,7 +314,14 @@ DEPLOY_TAG := $(shell git rev-parse --short HEAD)
 
 deploy: check-buildx
 	@echo "Building images tagged $(DEPLOY_TAG)..."
-	@IMAGE_TAG=$(DEPLOY_TAG) JUDGE_PROFILE=$(JUDGE_PROFILE) $(PROD_COMPOSE) build app autojudge
+	@if [ "$(JUDGE_PROFILE)" = "maratona" ] || [ "$(JUDGE_PROFILE)" = "minimal" ]; then \
+		echo "⚙️  Processando Dockerfiles slim para deploy..."; \
+		trap 'rm -f Dockerfile.slim Dockerfile.dev.slim Dockerfile.judge.slim' EXIT INT TERM; \
+		$(STRIP_BUILDERS_CMD); \
+		DOCKERFILE_APP=Dockerfile.slim DOCKERFILE_DEV=Dockerfile.dev.slim DOCKERFILE_JUDGE=Dockerfile.judge.slim IMAGE_TAG=$(DEPLOY_TAG) JUDGE_PROFILE=$(JUDGE_PROFILE) $(PROD_COMPOSE) build app autojudge; \
+	else \
+		IMAGE_TAG=$(DEPLOY_TAG) JUDGE_PROFILE=$(JUDGE_PROFILE) $(PROD_COMPOSE) build app autojudge; \
+	fi
 	@echo "Promoting $(DEPLOY_TAG) to :prod..."
 	@docker tag microhelium-app:$(DEPLOY_TAG) microhelium-app:prod
 	@docker tag microhelium-judge:$(DEPLOY_TAG) microhelium-judge:prod
