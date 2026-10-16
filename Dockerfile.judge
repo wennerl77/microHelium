@@ -75,7 +75,11 @@ RUN apk add --no-cache git \
     && git checkout --detach "${SCRATCH_RUN_COMMIT}"
 
 WORKDIR /src
-RUN npm install --no-audit --no-fund && npx webpack
+RUN npm config set fetch-retries 5 \
+    && npm config set fetch-retry-mintimeout 20000 \
+    && npm config set fetch-retry-maxtimeout 120000 \
+    && npm install --no-audit --no-fund \
+    && npx webpack
 
 # O bundle e o unico artefato que sai daqui.
 RUN test -s /src/dist/index.js

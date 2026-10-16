@@ -3,15 +3,23 @@ set -euo pipefail
 
 echo "=== MicroHelium Zero-Host Setup ==="
 
+# Suporte a flag --cloudflare via CLI ou variável de ambiente CLOUDFLARE
+ENABLE_CLOUDFLARE="${CLOUDFLARE:-false}"
+for arg in "$@"; do
+    if [ "$arg" = "--cloudflare" ]; then
+        ENABLE_CLOUDFLARE="true"
+    fi
+done
+
 # 1. Configuração Idempotente do .env e Registro de UID/GID
 if [ ! -f .env ]; then
     echo "Criando .env a partir de .env.docker..."
     cp .env.docker .env
 fi
 
-# Garantir DOCKER_UID e DOCKER_GID gravados no .env
-CURRENT_UID=$(id -u)
-CURRENT_GID=$(id -g)
+# Garantir DOCKER_UID e DOCKER_GID gravados no .env (respeitando SUDO_UID se executado com sudo)
+CURRENT_UID="${SUDO_UID:-$(id -u)}"
+CURRENT_GID="${SUDO_GID:-$(id -g)}"
 
 if ! grep -q "^DOCKER_UID=" .env; then
     echo "DOCKER_UID=${CURRENT_UID}" >> .env
@@ -58,9 +66,9 @@ if [ "$JUDGE_PROFILE" = "maratona" ] || [ "$JUDGE_PROFILE" = "minimal" ]; then
     DOCKERFILE_DEV=Dockerfile.dev.slim \
     DOCKERFILE_JUDGE=Dockerfile.judge.slim \
     JUDGE_PROFILE="$JUDGE_PROFILE" \
-    docker compose build app
+    docker compose build app autojudge
 else
-    JUDGE_PROFILE="$JUDGE_PROFILE" docker compose build app
+    JUDGE_PROFILE="$JUDGE_PROFILE" docker compose build app autojudge
 fi
 
 # 5. Instalação Determinística de Dependências PHP e Node
@@ -88,12 +96,20 @@ docker compose run --rm -T artisan storage:link --force
 echo "Executando migrações do banco de dados..."
 docker compose run --rm -T artisan migrate --force
 
-echo "Populando dados iniciais e usuário administrador (Seed)..."
-docker compose run --rm -T artisan db:seed --force
+if [ "${RUN_SEEDERS:-true}" = "true" ]; then
+    echo "Populando dados iniciais e usuário administrador (Seed)..."
+    docker compose run --rm -T artisan db:seed --force
+else
+    echo "Seeders ignorados (RUN_SEEDERS=false)."
+fi
 
 # 8. Inicialização da Stack Completa
 echo "Iniciando todos os serviços..."
-docker compose up -d
+PROFILE_ARGS=""
+if [ -n "${COMPOSE_PROFILE:-}" ]; then
+    PROFILE_ARGS="--profile ${COMPOSE_PROFILE}"
+fi
+docker compose ${PROFILE_ARGS} up -d
 
 # 9. Verificação de Fumaça com Retry
 echo "Aguardando estabilização dos serviços web..."
@@ -109,5 +125,22 @@ echo ""
 
 echo "Executando testes de fumaça..."
 SMOKE_PROD=0 ./scripts/smoke.sh
+
+# 10. Inicialização Opcional e Resiliente do Cloudflare Tunnel
+if [ "$ENABLE_CLOUDFLARE" = "true" ] || [ "$ENABLE_CLOUDFLARE" = "1" ] || [ "$ENABLE_CLOUDFLARE" = "yes" ]; then
+    echo "Verificando Cloudflare tunnel..."
+    if docker ps --filter "name=^cloudflared$" --filter "status=running" -q | grep -q .; then
+        echo "🌐 Cloudflare tunnel (cloudflared) já está em execução."
+    else
+        TOKEN=$(grep -E '^TUNNEL_TOKEN=' .env 2>/dev/null | cut -d= -f2- | tr -d '\r"' || echo "${TUNNEL_TOKEN:-}")
+        if [ -z "$TOKEN" ]; then
+            echo "⚠️  AVISO: TUNNEL_TOKEN não configurado no .env. Cloudflare tunnel não foi iniciado."
+        else
+            echo "🌐 Iniciando Cloudflare tunnel (cloudflared)..."
+            TUNNEL_TOKEN="$TOKEN" docker compose -f docker-compose.cloudflared.yml up -d || \
+                echo "⚠️  Falha ao iniciar cloudflared. A aplicação continuará funcionando localmente."
+        fi
+    fi
+fi
 
 echo "=== Setup Zero-Host concluído com sucesso! Acesse http://localhost:${APP_PORT:-8000} ==="

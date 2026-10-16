@@ -7,10 +7,11 @@ services:
     command: tunnel --no-autoupdate run
 
     environment:
-      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?Defina TUNNEL_TOKEN no arquivo .env}
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
     networks:
       - microhelium
 
 networks:
   microhelium:
     external: true
+    name: microhelium
