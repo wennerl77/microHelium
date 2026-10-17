@@ -100,4 +100,20 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Default Admin Credentials
+    |--------------------------------------------------------------------------
+    |
+    | Used by AdminSeeder to provision the initial administrator account.
+    |
+    */
+    'admin' => [
+        'username' => env('DEFAULT_ADMIN_USERNAME', 'admin'),
+        'email' => env('DEFAULT_ADMIN_EMAIL', 'admin@microhelium.local'),
+        'password' => env('DEFAULT_ADMIN_PASSWORD', 'admin123'),
+        'fullname' => env('DEFAULT_ADMIN_NAME', 'Administrator'),
+    ],
+
 ];
+

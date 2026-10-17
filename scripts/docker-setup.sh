@@ -100,7 +100,8 @@ if [ "${RUN_SEEDERS:-true}" = "true" ]; then
     echo "Populando dados iniciais e usuário administrador (Seed)..."
     docker compose run --rm -T artisan db:seed --force
 else
-    echo "Seeders ignorados (RUN_SEEDERS=false)."
+    echo "Seeders completos ignorados (RUN_SEEDERS=false). Garantindo criação de admin..."
+    docker compose run --rm -T artisan db:seed --class=AdminSeeder --force
 fi
 
 # 8. Inicialização da Stack Completa

@@ -1,7 +1,7 @@
 # MicroHelium Makefile
 # Docker commands for development and production
 
-.PHONY: help setup dev-up dev-up-cf dev-down prod-up prod-up-cf prod-down up-prod build up down restart dev logs shell migrate seed fresh test lint format deploy rollback smoke composer npm artisan check-buildx dev-tools cloudflare-up cloudflare-down cloudflare-status
+.PHONY: help setup dev-up dev-up-cf dev-down prod-up prod-up-cf prod-down up-prod build up down restart dev logs shell migrate seed seed-admin backup-db restore-db fresh test lint format deploy rollback smoke composer npm artisan check-buildx dev-tools cloudflare-up cloudflare-down cloudflare-status
 
 # Toolchain profile for compilers (maratona = ~2.1 GB, scripting = ~2.3 GB, funcional = ~4.5 GB, completo = ~9.4 GB)
 JUDGE_PROFILE ?= maratona
@@ -21,10 +21,15 @@ help:
 	@echo "  make dev-up-cf   - Inicializa DEV junto com o Cloudflare Tunnel para acesso remoto"
 	@echo "  make dev-down    - Para os contêineres de desenvolvimento"
 	@echo ""
-	@echo "Produção (sem Seeders):"
-	@echo "  make prod-up     - Constrói e inicializa PROD no perfil maratona (migrações apenas, sem seeders)"
+	@echo "Produção:"
+	@echo "  make prod-up     - Constrói e inicializa PROD no perfil maratona (migrações + admin seeder apenas)"
 	@echo "  make prod-up-cf  - Inicializa PROD junto com o Cloudflare Tunnel para acesso remoto"
 	@echo "  make prod-down   - Para os contêineres de produção"
+	@echo ""
+	@echo "Banco de Dados & Backups:"
+	@echo "  make seed-admin  - Cria o usuário administrador padrão (seguro para produção)"
+	@echo "  make backup-db   - Realiza backup completo do banco de dados (.sql)"
+	@echo "  make restore-db FILE=<path> - Restaura dump SQL completo no banco de dados"
 	@echo ""
 	@echo "Cloudflare Tunnel:"
 	@echo "  make cloudflare-up     - Inicializa o túnel Cloudflare (caso não esteja ativo)"
@@ -133,6 +138,30 @@ migrate:
 
 seed:
 	@docker compose exec app php artisan db:seed
+
+seed-admin:
+	@docker compose exec app php artisan db:seed --class=AdminSeeder --force
+
+backup-db:
+	@mkdir -p backups
+	@echo "Iniciando backup completo do banco de dados..."
+	@if docker compose ps --filter "name=microhelium-app" --filter "status=running" -q | grep -q .; then \
+		docker compose exec -T app php artisan db:backup; \
+	elif [ -n "$$(docker ps --filter "name=microhelium-db" --filter "status=running" -q)" ]; then \
+		docker compose run --rm -T artisan db:backup; \
+	else \
+		echo "ERRO: O container de banco de dados (db) não está em execução. Inicie com 'make up' ou 'make prod-up'."; \
+		exit 1; \
+	fi
+
+restore-db:
+ifndef FILE
+	$(error Uso: make restore-db FILE=backups/microhelium_backup_YYYY-MM-DD_HHmmss.sql)
+endif
+	@if [ ! -f "$(FILE)" ]; then echo "ERRO: Arquivo '$(FILE)' não encontrado."; exit 1; fi
+	@echo "Restaurando banco de dados a partir de $(FILE)..."
+	@docker compose exec -T db sh -c 'exec mysql -u"$$MYSQL_USER" -p"$$MYSQL_PASSWORD" "$$MYSQL_DATABASE"' < "$(FILE)"
+	@echo "✅ Banco de dados restaurado com sucesso a partir de $(FILE)."
 
 fresh:
 	@docker compose exec app php artisan migrate:fresh --seed
@@ -250,8 +279,10 @@ prod-up: check-buildx
 	fi
 	@echo "Subindo MySQL e Redis com espera de healthcheck..."
 	@IMAGE_TAG=$(IMAGE_TAG) $(PROD_COMPOSE) up -d --wait --wait-timeout 120 db redis
-	@echo "Executando migrações do banco de dados (sem seeders)..."
+	@echo "Executando migrações do banco de dados..."
 	@IMAGE_TAG=$(IMAGE_TAG) $(PROD_COMPOSE) run --rm -T artisan migrate --force
+	@echo "Garantindo usuário administrador padrão..."
+	@IMAGE_TAG=$(IMAGE_TAG) $(PROD_COMPOSE) run --rm -T artisan db:seed --class=AdminSeeder --force
 	@echo "Iniciando todos os serviços de produção..."
 	@IMAGE_TAG=$(IMAGE_TAG) $(PROD_COMPOSE) up -d
 	@if [ "$(CLOUDFLARE)" = "true" ] || [ "$(CLOUDFLARE)" = "1" ] || [ "$(CLOUDFLARE)" = "yes" ]; then \

@@ -91,17 +91,7 @@ class DatabaseSeeder extends Seeder
 
         $this->seedDemoProblems($contest);
 
-        User::firstOrCreate(
-            ['username' => env('DEFAULT_ADMIN_USERNAME', 'admin')],
-            [
-                'fullname' => 'Administrator',
-                'email' => env('DEFAULT_ADMIN_EMAIL', 'admin@microhelium.local'),
-                'password' => Hash::make(env('DEFAULT_ADMIN_PASSWORD', 'admin123')),
-                'user_type' => User::TYPE_ADMIN,
-                'contest_id' => $contest->id,
-                'is_enabled' => true,
-            ]
-        );
+        $this->call(AdminSeeder::class);
 
         User::firstOrCreate(
             ['username' => 'judge1'],
