@@ -167,7 +167,7 @@ class AutoJudgeService
      * do `ulimit -t`, que nao foi tocado. Afrouxar o relogio nao da mais
      * CPU a ninguem -- da mais paciencia ao juiz.
      */
-    protected function wallBackstopSeconds(int $cpuSeconds): int
+    public function wallBackstopSeconds(int $cpuSeconds): int
     {
         return (int) ceil(max(0, $cpuSeconds) * $this->wallContentionFactor) + $this->runWallGraceSeconds;
     }
@@ -186,7 +186,7 @@ class AutoJudgeService
      * quem produz `TLE`, nao disparou). O que muda e que a organizacao passa
      * a conseguir ler o que aconteceu.
      */
-    protected function runWithWallBackstop(PendingProcess $process, string $command, string $etapa, int $wallSeconds): ProcessResult
+    public function runWithWallBackstop(PendingProcess $process, string $command, string $etapa, int $wallSeconds): ProcessResult
     {
         try {
             return $process->run($command);
@@ -359,7 +359,7 @@ class AutoJudgeService
      * If the binary is absent the command is returned untouched -- a
      * missing measurement must not stop a contest.
      */
-    protected function withPeakRssMeasurement(string $command, string $rssPath): string
+    public function withPeakRssMeasurement(string $command, string $rssPath): string
     {
         if (! @is_executable($this->rssTimePath)) {
             return $command;
@@ -417,7 +417,7 @@ class AutoJudgeService
      *
      * @return array{peak_rss_kb: ?int, wall_seconds: ?float, cpu_seconds: ?float}
      */
-    protected function measurement(string $rssPath): array
+    public function measurement(string $rssPath): array
     {
         $empty = ['peak_rss_kb' => null, 'wall_seconds' => null, 'cpu_seconds' => null];
 
@@ -451,7 +451,7 @@ class AutoJudgeService
     /**
      * Resource limits applied inside the sandbox, as a `bash -c` prologue.
      */
-    protected function rlimitPrologue(array $options): string
+    public function rlimitPrologue(array $options): string
     {
         $prologue = '';
 
@@ -484,7 +484,7 @@ class AutoJudgeService
      * application root, which the sandbox does not mount, so it has to be
      * bound explicitly.
      */
-    protected function judgeRuntimePath(): string
+    public function judgeRuntimePath(): string
     {
         return base_path('resources/judge-runtime');
     }
@@ -500,7 +500,7 @@ class AutoJudgeService
      * infrastructure failure. So a match is only a hypothesis: it is
      * confirmed by actually trying to start an empty sandbox.
      */
-    protected function assertSandboxStarted(ProcessResult $result): void
+    public function assertSandboxStarted(ProcessResult $result): void
     {
         if (! $this->useBwrap || $result->exitCode() === 0) {
             return;
@@ -517,6 +517,22 @@ class AutoJudgeService
         throw new SandboxUnavailableException(
             'Judge sandbox failed to start: '.trim($matches[0])
         );
+    }
+
+    /**
+     * Whether bubblewrap isolation is configured and enabled.
+     */
+    public function isUsingBwrap(): bool
+    {
+        return $this->useBwrap;
+    }
+
+    /**
+     * Access the cgroup memory limiter.
+     */
+    public function cgroup(): CgroupMemoryLimiter
+    {
+        return $this->cgroup;
     }
 
     /**
@@ -978,11 +994,11 @@ class AutoJudgeService
         ];
     }
 
-    protected function compareOutput(
+    public function compareOutput(
         string $expected,
         string $actual,
-        Problem $problem,
-        object $language,
+        ?Problem $problem = null,
+        ?object $language = null,
         ?string $inputFile = null,
         ?string $expectedOutputFile = null,
         ?string $actualOutputFile = null
@@ -1003,14 +1019,16 @@ class AutoJudgeService
         // aquele metodo e um construtor de caminho puro, testavel sem disco,
         // e escolher entre dois caminhos e decisao de quem ja esta olhando o
         // disco de qualquer forma.
-        $compareScript = $problem->getCompareScriptPath($language->extension);
+        if ($problem !== null && $language !== null) {
+            $compareScript = $problem->getCompareScriptPath($language->extension);
 
-        if (! file_exists($compareScript)) {
-            $compareScript = $problem->getCompareScriptPath('default');
-        }
+            if (! file_exists($compareScript)) {
+                $compareScript = $problem->getCompareScriptPath('default');
+            }
 
-        if ($inputFile && $expectedOutputFile && $actualOutputFile && file_exists($compareScript)) {
-            return $this->runCompareScript($compareScript, $inputFile, $expectedOutputFile, $actualOutputFile);
+            if ($inputFile && $expectedOutputFile && $actualOutputFile && file_exists($compareScript)) {
+                return $this->runCompareScript($compareScript, $inputFile, $expectedOutputFile, $actualOutputFile);
+            }
         }
 
         // Normalize line endings
