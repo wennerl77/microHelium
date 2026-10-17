@@ -373,6 +373,15 @@ Route::prefix('backend')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/exercises', [ProblemManagementController::class, 'index'])->name('backend.exercises');
     Route::post('/exercises', [ProblemManagementController::class, 'store']);
 
+    // Issue #401: Polygon - Autoria e Calibracao de Problemas
+    Route::get('/polygon', function () {
+        return view('backend.polygon.index');
+    })->name('backend.polygon');
+
+    Route::get('/polygon/{exerciseId}', function ($exerciseId) {
+        return view('backend.polygon.workspace', compact('exerciseId'));
+    })->whereNumber('exerciseId')->name('backend.polygon.workspace');
+
     // Users Management
     Route::get('/users', [UserController::class, 'index'])->name('backend.users');
     Route::post('/users', [UserController::class, 'store']);
@@ -689,3 +698,4 @@ require __DIR__.'/frontend_api_icpc.php';
 require __DIR__.'/frontend_api_reports.php';
 require __DIR__.'/frontend_api_judgehosts.php';
 require __DIR__.'/frontend_api_judging_health.php';
+require __DIR__.'/backend_api_polygon.php';

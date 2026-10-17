@@ -17,6 +17,9 @@ const pages = {
     // de criar a organizacao que ela pede -- o seletor de proprietario
     // abria vazio. docs/specs/188-organizacoes.md.
     organizations: () => import('./Organizations.vue'),
+    // Issue #401. Polygon - Autoria e Calibracao de Problemas.
+    'polygon-dashboard': () => import('./PolygonDashboard.vue'),
+    'polygon-workspace': () => import('./PolygonWorkspace.vue'),
 };
 export async function mountFeaturePages() {
     for (const element of document.querySelectorAll('[data-feature-page]')) {
@@ -24,7 +27,11 @@ export async function mountFeaturePages() {
         if (!loader) continue;
         try {
             const { default: component } = await loader();
-            createApp(component, { mode: element.dataset.mode, problemId: element.dataset.problemId }).mount(element);
+            createApp(component, {
+                mode: element.dataset.mode,
+                problemId: element.dataset.problemId,
+                exerciseId: element.dataset.exerciseId,
+            }).mount(element);
         } catch {
             element.textContent = 'Não foi possível abrir esta página. Atualize para tentar novamente.';
             element.setAttribute('role', 'alert');

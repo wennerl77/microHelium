@@ -19,6 +19,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    privileged: true
+    cap_add:
+      - SYS_PTRACE
+
 
   # Queue Worker (auto-judge jobs dispatched via App\Jobs\JudgeRunJob)
   queue:
@@ -41,6 +45,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    privileged: true
+    cap_add:
+      - SYS_PTRACE
+
 
   # Nginx Web Server
   webserver:

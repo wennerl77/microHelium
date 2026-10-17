@@ -4,7 +4,7 @@
 
 @section('description', 'Encontre, revise e organize os problemas do seu acervo.')
 
-@section('page-actions')<a href="{{ route('backend.import-boca') }}" class="button-primary">Importar BOCA</a>@endsection
+@section('page-actions')<a href="{{ route('backend.polygon') }}" class="button-primary">+ Novo no Polygon (Autoria)</a><a href="{{ route('backend.import-boca') }}" class="button-secondary">Importar BOCA</a>@endsection
 
 @section('content')
 <a href="/backend/bank-governance" class="button-secondary mb-5">Organizar responsáveis e etiquetas</a>

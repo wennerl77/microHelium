@@ -168,14 +168,61 @@ class ContestWizardController extends Controller
                 $existingBasenames->push($basename);
                 $sortOrder++;
 
-                // Problem Bank only carries one sample input/output pair (no
-                // hidden test cases), but without at least this one, the
-                // problem has zero TestCase rows and AutoJudgeService would
-                // return "CS - no test cases found" for every submission,
-                // making the problem unjudgeable. Not a substitute for a
-                // real problem package with hidden cases, but it makes the
-                // problem actually functional out of the box.
-                if (filled($problem->sample_input) && filled($problem->sample_output)) {
+                // If a full test case package exists for this bank problem in
+                // storage/app/problem_bank/{code}/input/, copy all N test cases into
+                // the contest. Otherwise fallback to the starter sample test case.
+                $bankInputDir = storage_path("app/problem_bank/{$problem->code}/input");
+                $bankOutputDir = storage_path("app/problem_bank/{$problem->code}/output");
+
+                $bankFiles = is_dir($bankInputDir) ? (glob($bankInputDir . '/*') ?: []) : [];
+                $bankFiles = array_filter($bankFiles, 'is_file');
+
+                if (! empty($bankFiles)) {
+                    natsort($bankFiles);
+                    $bankFiles = array_values($bankFiles);
+
+                    // Check if any file matches sample_input
+                    $sampleMatched = false;
+                    foreach ($bankFiles as $inFile) {
+                        if (filled($problem->sample_input) && trim((string) file_get_contents($inFile)) === trim($problem->sample_input)) {
+                            $sampleMatched = true;
+                            break;
+                        }
+                    }
+
+                    $caseNum = 1;
+                    foreach ($bankFiles as $inFile) {
+                        $fileBase = basename($inFile);
+                        $outFile = $bankOutputDir . '/' . $fileBase;
+
+                        $inputContent = (string) file_get_contents($inFile);
+                        $outputContent = file_exists($outFile) ? (string) file_get_contents($outFile) : '';
+
+                        $inputRelative = "problems/{$contestId}/{$basename}/input/{$caseNum}";
+                        $outputRelative = "problems/{$contestId}/{$basename}/output/{$caseNum}";
+
+                        Storage::disk('local')->put($inputRelative, $inputContent);
+                        Storage::disk('local')->put($outputRelative, $outputContent);
+
+                        $isSample = $sampleMatched
+                            ? (filled($problem->sample_input) && trim($inputContent) === trim($problem->sample_input))
+                            : ($caseNum === 1);
+
+                        DB::table('test_cases')->insert([
+                            'problem_id' => $problemId,
+                            'number' => $caseNum,
+                            'input_file' => $inputRelative,
+                            'output_file' => $outputRelative,
+                            'input_hash' => hash('sha256', $inputContent),
+                            'output_hash' => hash('sha256', $outputContent),
+                            'is_sample' => $isSample,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                        $caseNum++;
+                    }
+                } elseif (filled($problem->sample_input) && filled($problem->sample_output)) {
                     $inputRelative = "problems/{$contestId}/{$basename}/input/1";
                     $outputRelative = "problems/{$contestId}/{$basename}/output/1";
 

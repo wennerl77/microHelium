@@ -305,6 +305,11 @@ class Run extends Model
         return $this->isJudged() && $this->answer?->is_accepted;
     }
 
+    public function getVerdictAttribute(): ?string
+    {
+        return $this->answer?->short_name;
+    }
+
     /**
      * Shared by JudgeController's "Atrasado" badge and the
      * runs:reconcile-stuck watchdog (issue #45) -- previously duplicated
