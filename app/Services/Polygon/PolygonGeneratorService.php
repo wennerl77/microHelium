@@ -225,6 +225,11 @@ class PolygonGeneratorService
 
         // 2. Process script tests
         foreach ($parsedScript as $args) {
+            // If no arguments/seed were provided (e.g. bare "gen > $"), supply caseNumber as seed
+            if (empty($args)) {
+                $args = [(string) $caseNumber];
+            }
+
             try {
                 $cmd = array_merge([$executable], $args);
                 $result = Process::path($tempDir)

@@ -56,8 +56,8 @@ test('PolygonGeneratorBuilder: adicionar variavel reflete no codigo C++', async 
     await tick();
 
     let preText = document.querySelector('#preview-code')?.textContent || '';
-    assert.match(preText, /int n = opt<int>\(1/);
-    assert.match(preText, /int m = opt<int>\(2/);
+    assert.match(preText, /int n = opt<int>\("n"/);
+    assert.match(preText, /int m = opt<int>\("m"/);
 
     // Adiciona variável
     const addBtn = document.querySelector('#btn-add-var');
@@ -66,7 +66,7 @@ test('PolygonGeneratorBuilder: adicionar variavel reflete no codigo C++', async 
     await tick();
 
     preText = document.querySelector('#preview-code')?.textContent || '';
-    assert.match(preText, /int k = opt<int>\(3/i, 'Nova variável K adicionada ao código C++');
+    assert.match(preText, /int k = opt<int>\("k"/i, 'Nova variável K adicionada com named opt ao código C++');
 });
 
 test('PolygonGeneratorBuilder: alternar para regra por coluna gera logica j == 0 no C++', async () => {
@@ -108,7 +108,9 @@ test('PolygonGeneratorBuilder: emitir apply com codigo e suggestedScript', async
 
     assert.ok(appliedData, 'Evento apply emitido');
     assert.match(appliedData.code, /registerGen\(argc, argv, 1\)/);
-    assert.match(appliedData.suggestedScript, /gen\s+\d+\s+\d+\s*>\s*\$/);
+    assert.match(appliedData.code, /opt<int>\("n"/);
+    assert.match(appliedData.suggestedScript, /gen 1 > \$/);
+    assert.match(appliedData.suggestedScript, /gen 10 > \$/);
 });
 
 test('PolygonWorkspace: abre assistente visual e aplica codigo gerado no editor gen.cpp', async () => {
@@ -152,5 +154,18 @@ test('PolygonWorkspace: abre assistente visual e aplica codigo gerado no editor 
     // Verifica textarea atualizado com novo código gerado
     const textarea = document.querySelector('#generator-source-code');
     assert.match(textarea.value, /registerGen\(argc, argv, 1\)/);
-    assert.match(textarea.value, /int n = opt<int>\(1/);
+    assert.match(textarea.value, /int n = opt<int>\("n"/);
+
+    // Navega para Aba 3 (Casos de Teste) e testa o botão + 10 Testes
+    const testsStep = stepButtons.find(b => b.textContent.includes('Geração de Testes'));
+    testsStep.dispatchEvent(new Event('click', { bubbles: true }));
+    await tick();
+
+    const batchBtn = document.querySelector('#btn-add-batch-tests');
+    assert.ok(batchBtn, 'Botão + 10 Testes presente na Aba 3');
+    batchBtn.dispatchEvent(new Event('click', { bubbles: true }));
+    await tick();
+
+    const scriptTextarea = document.querySelector('#generator-script');
+    assert.match(scriptTextarea.value, /gen \d+ > \$/);
 });

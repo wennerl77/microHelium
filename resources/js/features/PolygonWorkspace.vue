@@ -457,14 +457,23 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <!-- Script Editor -->
                     <div>
-                        <label for="generator-script" class="block text-xs font-semibold text-foreground mb-1">
-                            Script de Testes (1 comando por linha)
-                        </label>
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="generator-script" class="block text-xs font-semibold text-foreground">
+                                Script de Testes (1 comando por linha)
+                            </label>
+                            <button type="button"
+                                    id="btn-add-batch-tests"
+                                    @click="appendBatchTests"
+                                    class="button-secondary text-[11px] py-0.5 px-2"
+                                    title="Adicionar lote de 10 testes aleatórios com sementes">
+                                + 10 Testes
+                            </button>
+                        </div>
                         <textarea id="generator-script"
                                   v-model="exercise.generator_script"
                                   rows="8"
                                   class="w-full px-3 py-2 text-xs font-mono border rounded-lg bg-background text-foreground border-input focus:ring-2 focus:ring-ring focus:outline-none leading-relaxed"
-                                  placeholder="gen 5 10 > $&#10;gen 10 50 > $&#10;gen 1000 5000 > $"></textarea>
+                                  placeholder="gen 1 > $&#10;gen 2 > $&#10;gen 3 > $"></textarea>
                     </div>
 
                     <!-- Manual Tests Editor -->
@@ -1027,8 +1036,8 @@ using namespace std;
 int main(int argc, char* argv[]) {
     registerGen(argc, argv, 1);
     
-    int n = opt<int>(1, 10);
-    int maxVal = opt<int>(2, 100);
+    int n = opt<int>("n", 10);
+    int maxVal = opt<int>("maxVal", 100);
 
     cout << n << endl;
     for (int i = 0; i < n; i++) {
@@ -1403,6 +1412,25 @@ function addManualTest() {
 
 function removeManualTest(index) {
     exercise.manual_tests.splice(index, 1);
+}
+
+function appendBatchTests() {
+    let currentScript = exercise.generator_script || '';
+    const lines = currentScript.split('\n');
+    let maxSeed = 0;
+    lines.forEach(l => {
+        const m = l.match(/\bgen\s+(?:-\w+=\S+\s+)*(\d+)\s*>/);
+        if (m) {
+            maxSeed = Math.max(maxSeed, parseInt(m[1], 10));
+        }
+    });
+
+    let addition = currentScript && !currentScript.endsWith('\n') ? '\n' : '';
+    for (let i = 1; i <= 10; i++) {
+        addition += `gen ${maxSeed + i} > $\n`;
+    }
+    exercise.generator_script = (currentScript + addition).trimStart();
+    showToast('10 testes adicionados ao script.');
 }
 
 function openInspectModal(test) {

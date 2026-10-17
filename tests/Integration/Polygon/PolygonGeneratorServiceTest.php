@@ -244,6 +244,40 @@ CPP,
         $this->assertGreaterThan(0, $result['cases'][0]['size_bytes']);
     }
 
+    public function test_generate_tests_auto_seeds_empty_script_lines_producing_different_outputs(): void
+    {
+        $user = User::factory()->create();
+
+        $this->exercise = PolygonExercise::factory()->create([
+            'created_by' => $user->user_id,
+            'generator_source' => <<<'CPP'
+#include "testlib.h"
+#include <iostream>
+
+using namespace std;
+
+int main(int argc, char* argv[]) {
+    registerGen(argc, argv, 1);
+    int n = opt<int>("n", rnd.next(1, 1000000));
+    cout << n << "\n";
+    return 0;
+}
+CPP,
+            'generator_script' => "gen > $\ngen > $\n",
+            'manual_tests' => [],
+        ]);
+
+        $result = $this->service->generateTests($this->exercise);
+        $this->assertTrue($result['success']);
+        $this->assertSame(2, $result['total_tests']);
+
+        $testsDir = $this->exercise->getTempDirectory() . '/tests';
+        $test1 = trim(file_get_contents($testsDir . '/001.in'));
+        $test2 = trim(file_get_contents($testsDir . '/002.in'));
+
+        $this->assertNotSame($test1, $test2, 'Duas chamadas de "gen > $" devem receber sementes automáticas distintas.');
+    }
+
     private function ensureGppAvailable(): void
     {
         exec('which g++ 2>/dev/null', $output, $code);

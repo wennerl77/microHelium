@@ -319,7 +319,7 @@ const generatedCode = computed(() => {
         varIdentifiers.push(idName);
         const minVal = Math.min(Number(v.min) || 1, Number(v.max) || 1);
         const maxVal = Math.max(Number(v.min) || 1, Number(v.max) || 1);
-        code += `    int ${idName} = opt<int>(${idx + 1}, rnd.next(${minVal}, ${maxVal}));\n`;
+        code += `    int ${idName} = opt<int>("${idName}", rnd.next(${minVal}, ${maxVal}));\n`;
     });
 
     if (varIdentifiers.length > 0) {
@@ -460,15 +460,13 @@ const sampleOutput = computed(() => {
 function applyCode() {
     let script = '';
     if (updateSuggestedScript.value) {
-        const smallArgs = config.variables.map(v => Math.min(Number(v.min) || 1, Number(v.max) || 1)).join(' ');
-        const maxArgs = config.variables.map(v => Math.max(Number(v.min) || 1, Number(v.max) || 1)).join(' ');
-        const midArgs = config.variables.map(v => {
-            const mi = Math.min(Number(v.min) || 1, Number(v.max) || 1);
-            const ma = Math.max(Number(v.min) || 1, Number(v.max) || 1);
-            return Math.floor((mi + ma) / 2);
-        }).join(' ');
-
-        script = `gen ${smallArgs} > $\ngen ${midArgs} > $\ngen ${maxArgs} > $\n`;
+        script = '# Casos aleatórios com sementes\n';
+        for (let s = 1; s <= 10; s++) {
+            script += `gen ${s} > $\n`;
+        }
+        const minFlags = config.variables.map(v => `-${v.name.toLowerCase()}=${Math.min(Number(v.min) || 1, Number(v.max) || 1)}`).join(' ');
+        const maxFlags = config.variables.map(v => `-${v.name.toLowerCase()}=${Math.max(Number(v.min) || 1, Number(v.max) || 1)}`).join(' ');
+        script += `\n# Casos com limites\ngen ${minFlags} 11 > $\ngen ${maxFlags} 12 > $\n`;
     }
 
     emit('apply', {
