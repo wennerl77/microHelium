@@ -20,3 +20,8 @@ npm-debug.log
 /test-results
 /playwright-report
 /.playwright-mcp
+
+# Database dumps and backups
+/backups
+*.sql
+*.sql.gz
