@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
+use App\Models\Contest;
 use App\Models\Organization;
 use App\Models\Site;
 use App\Services\AccountAnonymizer;
 use App\Services\ManagedAccountProvisioner;
+use App\Services\TeamBatchProvisioner;
 use Helium\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,8 +43,9 @@ class UserController extends Controller
         // arquivada como afiliacao nova e oferecer o que nao deve mais ser
         // escolhido.
         $organizations = $this->selectableOrganizations();
+        $contests = Contest::query()->competition()->orderByDesc('id')->get();
 
-        return view('backend.users', compact('users', 'sitesByContest', 'organizations'));
+        return view('backend.users', compact('users', 'sitesByContest', 'organizations', 'contests'));
     }
 
     /**
@@ -317,4 +320,56 @@ class UserController extends Controller
         ]);
     }
 
+    public function generateSbcBatch(Request $request, TeamBatchProvisioner $provisioner)
+    {
+        $validated = $request->validate([
+            'contest_id' => 'required|exists:contests,id',
+            'site_id' => 'required|exists:sites,id',
+            'count' => 'required|integer|min:1|max:200',
+            'prefix' => 'nullable|string|max:30',
+            'enabled' => 'nullable|boolean',
+        ]);
+
+        $prefix = trim($validated['prefix'] ?? '') ?: 'team';
+        $enabled = (bool) ($request->has('enabled') && $request->input('enabled'));
+
+        $result = $provisioner->generate(
+            contestId: (int) $validated['contest_id'],
+            siteId: (int) $validated['site_id'],
+            count: (int) $validated['count'],
+            prefix: $prefix,
+            managedBy: auth()->user()->user_id,
+            enabled: $enabled
+        );
+
+        $filename = 'credenciais-equipes-' . date('Ymd-His') . '.csv';
+
+        return response($result['csv'], 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+
+    public function toggleContestAccess(Request $request, TeamBatchProvisioner $provisioner): RedirectResponse
+    {
+        $validated = $request->validate([
+            'contest_id' => 'required|exists:contests,id',
+            'action' => 'required|in:enable,disable',
+            'site_id' => 'nullable|exists:sites,id',
+        ]);
+
+        $enable = $validated['action'] === 'enable';
+        $siteId = ! empty($validated['site_id']) ? (int) $validated['site_id'] : null;
+
+        $count = $provisioner->toggleContestTeamsAccess(
+            contestId: (int) $validated['contest_id'],
+            enable: $enable,
+            siteId: $siteId
+        );
+
+        $statusMsg = $enable ? 'liberado' : 'bloqueado';
+
+        return redirect()->route('backend.users')
+            ->with('success', "Acesso {$statusMsg} com sucesso para {$count} equipe(s) do contest.");
+    }
 }

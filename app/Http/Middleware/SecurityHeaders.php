@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -49,6 +50,7 @@ class SecurityHeaders
         // it to emit the one <style> block that replaces the inline style
         // attributes -- which is what lets style-src drop 'unsafe-inline'.
         View::share('cspNonce', $nonce);
+        Vite::useCspNonce($nonce);
 
         /** @var Response $response */
         $response = $next($request);
@@ -124,6 +126,7 @@ class SecurityHeaders
         if (app()->environment('local') && config('app.debug')) {
             $devServer = 'http://localhost:'.self::VITE_DEV_PORT;
             $script[] = $devServer;
+            $style[] = $devServer;
             $connect[] = $devServer;
             $connect[] = 'ws://localhost:'.self::VITE_DEV_PORT;
         }

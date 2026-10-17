@@ -123,105 +123,70 @@ Route::get('/login', function () {
 })->name('login');
 
 Route::post('/login', function () {
-    $credentials = request()->only('email', 'password');
+    $loginInput = trim((string) request()->input('email', request()->input('login')));
+    $password = (string) request()->input('password');
 
-    // request()->ip() is only the real client address because nginx is the
-    // sole hop in front of PHP-FPM in every compose file in this repo. If a
-    // reverse proxy/load balancer/CDN is ever placed in front of this app,
-    // bootstrap/app.php MUST configure ->trustProxies() with that proxy's
-    // *specific* IP(s) before this becomes meaningful again -- trusting
-    // X-Forwarded-For blindly (e.g. trustProxies(at: '*')) without an
-    // actual trusted proxy in front lets any client simply set that header
-    // themselves to spoof an allowed address, defeating the lock entirely.
     $clientIp = request()->ip();
 
-    // A user who legitimately logs in from their site's own network with
-    // "remember me" checked, then leaves with the device, would otherwise
-    // silently bypass isIpAllowed() forever after -- Laravel's remember
-    // cookie re-authenticates on later requests without ever going through
-    // this route again. Accounts tied to an IP-restricted site never get a
-    // persistent session, so every new browser session re-checks the IP.
+    $candidate = User::where('email', $loginInput)->first()
+        ?? User::whereRaw('LOWER(TRIM(username)) = ?', [mb_strtolower($loginInput)])->first();
+
     $remember = request()->filled('remember');
-    if ($remember) {
-        $candidate = User::where('email', $credentials['email'] ?? null)->first();
-        if ($candidate?->site?->ip_address) {
-            $remember = false;
-        }
+    if ($remember && $candidate?->site?->ip_address) {
+        $remember = false;
     }
 
-    if (auth()->attempt($credentials, $remember)) {
-        $user = auth()->user();
+    if (! $candidate || ! Hash::check($password, $candidate->password)) {
+        return back()->withErrors([
+            'email' => __('Credenciais invalidas.'),
+        ])->withInput(request()->only('email', 'login'));
+    }
 
-        // Issue #277: uma conta desabilitada nao entra.
-        //
-        // `auth()->attempt()` NAO olha `is_enabled` -- o provider padrao do
-        // Eloquent so compara credenciais --, e o buraco ja estava
-        // documentado em Api\TokenController: "the web login has the same
-        // hole". A emissao de token fechava o lado dela; este e o outro
-        // lado.
-        //
-        // Importa para o #47: conta gerenciada de menor de idade nasce
-        // DESABILITADA de proposito, para so ser usavel depois da ativacao.
-        // Sem esta checagem, ela entra assim que alguem souber a senha.
-        //
-        // A checagem vem DEPOIS do attempt(), e nao antes, de proposito:
-        // antes, qualquer um poderia descobrir quais contas estao
-        // desabilitadas sem ter credencial nenhuma. Depois, e preciso ja ter
-        // acertado a senha para receber esta resposta.
-        if (! $user->is_enabled) {
-            auth()->logout();
-            request()->session()->invalidate();
-            request()->session()->regenerateToken();
+    // Se a conta estiver desabilitada, checar se pertence a um contest cujo horário já iniciou
+    if (! $candidate->is_enabled) {
+        $contest = $candidate->contest;
+        $autoAllowed = $contest && $contest->start_time && now()->gte($contest->start_time);
 
-            // `contest_logs.contest_id` e obrigatorio. Uma conta de admin
-            // nao tem prova nem sede, e passar null aqui e TypeError: o
-            // administrador desabilitado recebia 500 no lugar da recusa. A
-            // conta sem prova nao gera registro, porque a tela que le esses
-            // registros filtra por prova de qualquer forma.
-            $logContestId = $user->contest_id ?? $user->site?->contest_id;
+        if ($autoAllowed) {
+            $candidate->forceFill(['is_enabled' => true])->save();
+        } else {
+            $logContestId = $candidate->contest_id ?? $candidate->site?->contest_id;
 
             if ($logContestId !== null) {
                 ContestLog::warning(
                     (int) $logContestId,
                     'Login bloqueado: conta desabilitada',
-                    ['user_id' => $user->user_id]
+                    ['user_id' => $candidate->user_id]
                 );
             }
 
-            return back()->withErrors([
-                'email' => __('Esta conta esta desabilitada. Procure a organizacao do evento.'),
-            ])->withInput(request()->only('email'));
-        }
-
-        // Issue #50: Site::ip_address was collected via the admin UI but
-        // never enforced. A user whose account belongs to a site with a
-        // configured ip_address must be connecting from an allowed
-        // address/range -- checked here, not on a later page, so a
-        // wrong-network login never gets a live session in the first place.
-        if ($user->site && ! $user->site->isIpAllowed($clientIp)) {
-            auth()->logout();
-            request()->session()->invalidate();
-            request()->session()->regenerateToken();
-
-            ContestLog::warning(
-                $user->contest_id ?? $user->site->contest_id,
-                "Login bloqueado: IP fora da rede configurada para o site \"{$user->site->name}\"",
-                ['user_id' => $user->user_id, 'site_id' => $user->site_id, 'ip' => $clientIp]
-            );
+            $errorMessage = ($contest && $contest->start_time && now()->lt($contest->start_time))
+                ? __('Acesso bloqueado: sua maratona iniciará em :time. Aguarde o início ou a liberação da organização.', ['time' => \Carbon\Carbon::parse($contest->start_time)->format('H:i \d\e d/m/Y')])
+                : __('Esta conta esta desabilitada. Procure a organizacao do evento.');
 
             return back()->withErrors([
-                'email' => __('Acesso bloqueado: fora da rede autorizada para o seu site.'),
-            ])->withInput(request()->only('email'));
+                'email' => $errorMessage,
+            ])->withInput(request()->only('email', 'login'));
         }
-
-        request()->session()->regenerate();
-
-        return redirect()->intended('/home');
     }
 
-    return back()->withErrors([
-        'email' => __('Credenciais invalidas.'),
-    ])->withInput(request()->only('email'));
+    // Issue #50: Site::ip_address
+    if ($candidate->site && ! $candidate->site->isIpAllowed($clientIp)) {
+        ContestLog::warning(
+            $candidate->contest_id ?? $candidate->site->contest_id,
+            "Login bloqueado: IP fora da rede configurada para o site \"{$candidate->site->name}\"",
+            ['user_id' => $candidate->user_id, 'site_id' => $candidate->site_id, 'ip' => $clientIp]
+        );
+
+        return back()->withErrors([
+            'email' => __('Acesso bloqueado: fora da rede autorizada para o seu site.'),
+        ])->withInput(request()->only('email', 'login'));
+    }
+
+    auth()->login($candidate, $remember);
+    request()->session()->regenerate();
+
+    return redirect()->intended('/home');
 })->middleware('throttle:5,1');
 
 // Issue #275 -- o auto-cadastro deixou de entregar sessao.
@@ -394,6 +359,8 @@ Route::prefix('backend')->middleware(['auth', 'admin'])->group(function () {
     // Issue #183 -- um link de uso unico para a pessoa escolher a propria
     // senha, em vez de alguem digitar uma por ela e passar a saber qual e.
     Route::post('/users/{user}/reset-link', [UserController::class, 'resetLink'])->name('backend.users.reset-link');
+    Route::post('/users/generate-sbc', [UserController::class, 'generateSbcBatch'])->name('backend.users.generate-sbc');
+    Route::post('/users/toggle-contest-access', [UserController::class, 'toggleContestAccess'])->name('backend.users.toggle-contest-access');
 
     // Site Management (multi-site coordination -- see issue #18)
     Route::get('/sites', [App\Http\Controllers\Backend\SiteController::class, 'index'])->name('backend.sites');

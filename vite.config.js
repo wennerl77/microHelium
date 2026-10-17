@@ -48,6 +48,10 @@ export default defineConfig({
         host: '0.0.0.0',
         port: 5173,
         strictPort: true,
+        cors: true,
+        headers: {
+            'Cross-Origin-Resource-Policy': 'cross-origin',
+        },
         hmr: {
             host: 'localhost',
             port: 5173,
