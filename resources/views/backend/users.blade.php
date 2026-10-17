@@ -14,12 +14,26 @@
                     <h2 class="text-xl font-semibold text-foreground">Contas cadastradas</h2>
                     <p class="text-sm text-muted-foreground mt-1">Lista de todos os usuarios do sistema</p>
                 </div>
-                <button data-dialog-open="addUserModal" class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary-hover transition-colors">
-                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Novo usuário
-                </button>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button data-dialog-open="generateSbcModal" class="inline-flex items-center gap-2 px-3 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors text-sm font-medium">
+                        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        Gerar Equipes em Lote (SBC)
+                    </button>
+                    <button data-dialog-open="toggleAccessModal" class="inline-flex items-center gap-2 px-3 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors text-sm font-medium">
+                        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                        </svg>
+                        Liberar / Bloquear Equipes
+                    </button>
+                    <button data-dialog-open="addUserModal" class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary-hover transition-colors text-sm font-medium">
+                        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Novo usuário
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -196,6 +210,114 @@
                 <div class="flex items-center justify-end gap-3 p-6 border-t border-border bg-muted/30">
                     <button type="button" data-dialog-close="addUserModal" class="px-4 py-2 text-foreground hover:bg-muted rounded-lg transition-colors">Cancelar</button>
                     <button type="submit" class="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary-hover transition-colors">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Gerar Equipes em Lote (SBC) -->
+<div data-dialog id="generateSbcModal" class="fixed inset-0 z-50 hidden">
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" data-dialog-close="generateSbcModal"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4">
+        <div class="bg-card rounded-xl shadow-xl border border-border w-full max-w-lg">
+            <div class="flex flex-wrap items-center justify-between gap-3 p-6 border-b border-border">
+                <div>
+                    <h3 class="text-xl font-semibold text-foreground">Gerar Equipes em Lote (Estilo SBC)</h3>
+                    <p class="text-sm text-muted-foreground mt-1">Cria credenciais com senhas aleatórias e exporta a planilha de filipetas.</p>
+                </div>
+                <button data-dialog-close="generateSbcModal" class="p-2 hover:bg-muted rounded-lg transition-colors">
+                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <form action="{{ route('backend.users.generate-sbc') }}" method="POST">
+                @csrf
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label for="sbc_contest_id" class="block text-sm font-medium text-foreground mb-1">Maratona / Competição</label>
+                        <select id="sbc_contest_id" name="contest_id" class="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                            @foreach($contests as $contest)
+                                <option value="{{ $contest->id }}">{{ $contest->name }} {{ $contest->start_time ? '('.date('d/m/Y H:i', strtotime($contest->start_time)).')' : '' }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label for="sbc_site_id" class="block text-sm font-medium text-foreground mb-1">Sede / Site</label>
+                        <select id="sbc_site_id" name="site_id" class="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                            @foreach($sitesByContest as $contestName => $sites)
+                                <optgroup label="{{ $contestName }}">
+                                    @foreach($sites as $site)
+                                        <option value="{{ $site->id }}">{{ $site->name }}</option>
+                                    @endforeach
+                                </optgroup>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="sbc_count" class="block text-sm font-medium text-foreground mb-1">Quantidade de equipes</label>
+                            <input id="sbc_count" type="number" name="count" min="1" max="200" value="10" class="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                        </div>
+                        <div>
+                            <label for="sbc_prefix" class="block text-sm font-medium text-foreground mb-1">Prefixo do login</label>
+                            <input id="sbc_prefix" type="text" name="prefix" value="team" maxlength="20" class="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="ex: team ou time">
+                        </div>
+                    </div>
+                    <p class="text-xs text-muted-foreground">Cada login receberá um sufixo aleatório único (ex.: <span class="font-mono text-foreground">team-x7k9</span>) e uma senha segura legível sem e-mail pessoal.</p>
+                    <div class="pt-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="enabled" value="1" class="rounded border-border text-primary focus:ring-primary">
+                            <span class="text-sm text-foreground">Criar contas já habilitadas (desmarque para liberar apenas no horário da prova)</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="flex items-center justify-end gap-3 p-6 border-t border-border bg-muted/30">
+                    <button type="button" data-dialog-close="generateSbcModal" class="px-4 py-2 text-foreground hover:bg-muted rounded-lg transition-colors">Cancelar</button>
+                    <button type="submit" class="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary-hover transition-colors font-medium">Gerar e Baixar CSV</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Liberar / Bloquear Equipes em Lote -->
+<div data-dialog id="toggleAccessModal" class="fixed inset-0 z-50 hidden">
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" data-dialog-close="toggleAccessModal"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4">
+        <div class="bg-card rounded-xl shadow-xl border border-border w-full max-w-lg">
+            <div class="flex flex-wrap items-center justify-between gap-3 p-6 border-b border-border">
+                <h3 class="text-xl font-semibold text-foreground">Liberar ou Bloquear Equipes em Lote</h3>
+                <button data-dialog-close="toggleAccessModal" class="p-2 hover:bg-muted rounded-lg transition-colors">
+                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <form action="{{ route('backend.users.toggle-contest-access') }}" method="POST">
+                @csrf
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label for="toggle_contest_id" class="block text-sm font-medium text-foreground mb-1">Maratona / Competição</label>
+                        <select id="toggle_contest_id" name="contest_id" class="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                            @foreach($contests as $contest)
+                                <option value="{{ $contest->id }}">{{ $contest->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label for="toggle_action" class="block text-sm font-medium text-foreground mb-1">Ação</label>
+                        <select id="toggle_action" name="action" class="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                            <option value="enable">Liberar Acesso (Habilitar todas as equipes)</option>
+                            <option value="disable">Bloquear Acesso (Desabilitar todas as equipes)</option>
+                        </select>
+                    </div>
+                    <p class="text-sm text-muted-foreground">Esta alteração se aplica a todas as contas de equipes vinculadas à maratona selecionada.</p>
+                </div>
+                <div class="flex items-center justify-end gap-3 p-6 border-t border-border bg-muted/30">
+                    <button type="button" data-dialog-close="toggleAccessModal" class="px-4 py-2 text-foreground hover:bg-muted rounded-lg transition-colors">Cancelar</button>
+                    <button type="submit" class="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary-hover transition-colors font-medium">Confirmar Alteração</button>
                 </div>
             </form>
         </div>
