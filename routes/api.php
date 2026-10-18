@@ -258,7 +258,16 @@ Route::get('/contest/current', function () {
     // prova. O que faltava nao era o filtro, era a SESSAO: sem ela
     // `auth()->user()` e null mesmo para quem esta logado, e um filtro
     // honesto trataria o competidor como estranho.
-    $contest = Contest::query()->competition()->where('is_active', true)->visibleTo(auth()->user())->first();
+    $user = auth()->user();
+    $contest = null;
+
+    if ($user?->contest_id) {
+        $contest = Contest::query()->competition()->where('is_active', true)->find($user->contest_id);
+    }
+
+    if (! $contest) {
+        $contest = Contest::query()->competition()->where('is_active', true)->visibleTo($user)->first();
+    }
 
     if (! $contest) {
         // Atencao, quem consome: isto sai como `{}` e nao como `null` --

@@ -1,0 +1,1 @@
+import{P as e,_ as t,w as n}from"./app-uTi_thQx.js";var r=[`hidden`,`id`],i={__name:`FieldError`,props:{error:Object,name:String},setup(i){return(a,o)=>(n(),t(`p`,{hidden:!i.error?.errors?.[i.name],id:`${i.name}-error`,class:`field-error`},e(i.error?.errors?.[i.name]?.join(` `)),9,r))}};export{i as t};

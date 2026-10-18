@@ -20,9 +20,14 @@ class SubmitController extends Controller
         $this->middleware('auth');
     }
 
-    public function create(Problem $problem): View
+    public function create(Problem $problem): View|RedirectResponse
     {
         $this->authorizeProblemAccess($problem);
+
+        if (! $problem->contest->maySeeProblems(auth()->user())) {
+            return redirect()->route('exercises')
+                ->with('error', __('A prova ainda não começou. As questões serão liberadas no horário de início.'));
+        }
 
         $languages = Language::where('contest_id', $problem->contest_id)
             ->where('is_active', true)

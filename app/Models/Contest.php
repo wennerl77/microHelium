@@ -41,6 +41,7 @@ class Contest extends Model
         'medal_gold',
         'medal_silver',
         'medal_bronze',
+        'exam_template_id',
     ];
 
     protected $casts = [
@@ -124,6 +125,24 @@ class Contest extends Model
     }
 
     /**
+     * Determines whether the given user may see the problems/questions of this contest.
+     * Staff (admins/judges) can always view them.
+     * Regular users (students/teams) may only see problems after the contest has started.
+     */
+    public function maySeeProblems(?User $user): bool
+    {
+        if (! $this->isVisibleTo($user)) {
+            return false;
+        }
+
+        if ($user?->isAdmin() || $user?->isJudge()) {
+            return true;
+        }
+
+        return $this->hasStarted();
+    }
+
+    /**
      * The row-set half of isVisibleTo(), for the listings.
      *
      * Kept beside it on purpose: a listing that filters by a different rule
@@ -170,6 +189,11 @@ class Contest extends Model
     }
 
     /** @return HasMany<Site, $this> */
+    public function examTemplate(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(ExamTemplate::class);
+    }
+
     public function sites(): HasMany
     {
         return $this->hasMany(Site::class);
@@ -266,6 +290,11 @@ class Contest extends Model
         }
 
         return Carbon::instance($this->end_time->copy()->subMinutes($this->attributes['freeze_time']));
+    }
+
+    public function hasStarted(): bool
+    {
+        return $this->start_time !== null && now()->gte($this->start_time);
     }
 
     public function isRunning(): bool

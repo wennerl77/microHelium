@@ -3,6 +3,7 @@
 namespace App\Services\Polygon;
 
 use App\Exceptions\JudgeWallClockTimeoutException;
+use App\Http\Controllers\Backend\PolygonExerciseController;
 use App\Models\PolygonExercise;
 use App\Services\AutoJudgeService;
 use Illuminate\Contracts\Process\ProcessResult;
@@ -279,16 +280,18 @@ class PolygonCalibrationService
                 ];
             }
 
-            $inContent = file_exists($inFile) ? (string) file_get_contents($inFile) : '';
-            $outContent = file_exists($officialOutFile) ? (string) file_get_contents($officialOutFile) : '';
+            $inData = PolygonExerciseController::readPreview($inFile, 2048);
+            $outData = PolygonExerciseController::readPreview($officialOutFile, 2048);
 
             $cases[] = [
                 'number' => $caseNumber,
                 'is_sample' => $isSample,
-                'input_bytes' => (int) @filesize($inFile),
-                'output_bytes' => (int) (file_exists($officialOutFile) ? @filesize($officialOutFile) : 0),
-                'input' => $inContent,
-                'output' => $outContent,
+                'input_bytes' => $inData['size'],
+                'output_bytes' => $outData['size'],
+                'is_truncated' => $inData['is_truncated'] || $outData['is_truncated'],
+                'input' => $inData['content'] ?? '',
+                'output' => $outData['content'] ?? '',
+                'preview' => $inData['preview'],
                 'accept' => [
                     'verdict' => $acceptResult['verdict'],
                     'time' => $acceptResult['time'],

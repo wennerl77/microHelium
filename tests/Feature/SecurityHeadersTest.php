@@ -127,4 +127,25 @@ class SecurityHeadersTest extends TestCase
             ->assertOk()
             ->assertHeader('Cache-Control', 'no-store, private');
     }
+
+    public function test_csp_is_omitted_on_server_errors_in_local_debug_mode(): void
+    {
+        \Illuminate\Support\Facades\Route::get('/_test_server_error', function () {
+            abort(500);
+        });
+
+        // In test environment, app()->environment() is 'testing', so CSP is normally present
+        $response = $this->get('/_test_server_error');
+        $this->assertTrue($response->headers->has('Content-Security-Policy'));
+
+        // When environment is local and app.debug is true
+        config(['app.debug' => true]);
+        $this->app->detectEnvironment(fn () => 'local');
+
+        $debugResponse = $this->get('/_test_server_error');
+        $this->assertFalse(
+            $debugResponse->headers->has('Content-Security-Policy'),
+            'CSP should not be sent on 500 server errors in local debug mode to allow error screen rendering'
+        );
+    }
 }

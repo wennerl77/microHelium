@@ -56,6 +56,13 @@ class SecurityHeaders
         $response = $next($request);
 
         foreach ($this->headers($request) as $header => $value) {
+            // In local debug mode, do not inject Content-Security-Policy on 500 server
+            // errors so Laravel's error screen (Flare/Ignition) can render its inline
+            // scripts and styles, letting the developer see the actual exception.
+            if ($header === 'Content-Security-Policy' && app()->environment('local') && config('app.debug') && $response->isServerError()) {
+                continue;
+            }
+
             // Never clobber a header a controller set deliberately -- the
             // webcast export sets its own Cache-Control, for instance.
             if (! $response->headers->has($header)) {

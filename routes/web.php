@@ -3,6 +3,9 @@
 use App\Http\Controllers\Backend\ConfigurationController;
 use App\Http\Controllers\Backend\ContestLogController;
 use App\Http\Controllers\Backend\ContestWizardController;
+use App\Http\Controllers\Backend\ExamScheduleController;
+use App\Http\Controllers\Backend\ExamTemplateController;
+use App\Http\Controllers\Backend\SchoolController;
 use App\Http\Controllers\Backend\LanguageController;
 use App\Http\Controllers\Backend\ProblemBankController;
 use App\Http\Controllers\Backend\ProblemManagementController;
@@ -385,6 +388,26 @@ Route::prefix('backend')->middleware(['auth', 'admin'])->group(function () {
     // Contest Wizard
     Route::get('/contest-wizard', [ContestWizardController::class, 'index'])->name('backend.contest-wizard');
     Route::post('/contest-wizard', [ContestWizardController::class, 'store']);
+
+    // Templates de prova N1/N2/N3 (fixos: sem create/destroy), escolas e
+    // agendamento de provas a partir dos templates.
+    Route::get('/exam-templates', [ExamTemplateController::class, 'index'])->name('backend.exam-templates');
+    Route::get('/exam-templates/{template}/edit', [ExamTemplateController::class, 'edit'])->name('backend.exam-templates.edit');
+    Route::put('/exam-templates/{template}', [ExamTemplateController::class, 'update'])->name('backend.exam-templates.update');
+
+    Route::get('/exams', [ExamScheduleController::class, 'index'])->name('backend.exams');
+    Route::get('/exams/create', [ExamScheduleController::class, 'create'])->name('backend.exams.create');
+    Route::post('/exams', [ExamScheduleController::class, 'store'])->name('backend.exams.store');
+
+    Route::get('/schools', [SchoolController::class, 'index'])->name('backend.schools');
+    Route::post('/schools', [SchoolController::class, 'store'])->name('backend.schools.store');
+    Route::put('/schools/{school}', [SchoolController::class, 'update'])->name('backend.schools.update');
+    Route::delete('/schools/{school}', [SchoolController::class, 'destroy'])->name('backend.schools.destroy');
+    Route::post('/schools/{school}/teams', [SchoolController::class, 'storeTeam'])->name('backend.schools.teams.store');
+    Route::put('/school-teams/{team}', [SchoolController::class, 'updateTeam'])->name('backend.schools.teams.update');
+    Route::delete('/school-teams/{team}', [SchoolController::class, 'destroyTeam'])->name('backend.schools.teams.destroy');
+    Route::post('/school-teams/{team}/members', [SchoolController::class, 'storeMember'])->name('backend.schools.members.store');
+    Route::delete('/school-team-members/{member}', [SchoolController::class, 'destroyMember'])->name('backend.schools.members.destroy');
 
     // Clarifications Management (Admin)
     Route::get('/clarifications', function () {

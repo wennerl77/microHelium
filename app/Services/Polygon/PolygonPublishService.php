@@ -78,20 +78,9 @@ class PolygonPublishService
                 );
             }
 
-            $inputContent = file_get_contents($inFile);
-            $outputContent = file_get_contents($outFile);
-
-            if ($inputContent === false || $outputContent === false) {
-                throw new RuntimeException(
-                    "Falha ao ler o conteúdo dos arquivos de teste: [{$inFile}] ou [{$outFile}]."
-                );
-            }
-
             $testCasesData[] = [
                 'in_file' => $inFile,
                 'out_file' => $outFile,
-                'input' => $inputContent,
-                'output' => $outputContent,
             ];
         }
 
@@ -191,8 +180,11 @@ class PolygonPublishService
             $inputRel = "{$inputDirRel}/{$i}";
             $outputRel = "{$outputDirRel}/{$i}";
 
-            Storage::disk('local')->put($inputRel, $tc['input']);
-            Storage::disk('local')->put($outputRel, $tc['output']);
+            $destIn = Storage::disk('local')->path($inputRel);
+            $destOut = Storage::disk('local')->path($outputRel);
+
+            copy($tc['in_file'], $destIn);
+            copy($tc['out_file'], $destOut);
 
             $isSample = $hasAnySampleFlag ? ! empty($explicitSamples[$i]) : ($i === 1);
 
@@ -201,8 +193,8 @@ class PolygonPublishService
                 'number' => $i,
                 'input_file' => $inputRel,
                 'output_file' => $outputRel,
-                'input_hash' => hash('sha256', $tc['input']),
-                'output_hash' => hash('sha256', $tc['output']),
+                'input_hash' => hash_file('sha256', $tc['in_file']),
+                'output_hash' => hash_file('sha256', $tc['out_file']),
                 'is_sample' => $isSample,
             ]);
         }
@@ -256,22 +248,25 @@ class PolygonPublishService
         array $explicitSamples
     ): array {
         // Resolve sample input and output from first sample test (or first test)
-        $firstSampleCase = null;
+        $sampleInFile = null;
+        $sampleOutFile = null;
         foreach ($testCasesData as $index => $tc) {
             $caseNum = $index + 1;
             $isSample = $hasAnySampleFlag ? ! empty($explicitSamples[$caseNum]) : ($caseNum === 1);
             if ($isSample) {
-                $firstSampleCase = $tc;
+                $sampleInFile = $tc['in_file'];
+                $sampleOutFile = $tc['out_file'];
                 break;
             }
         }
 
-        if (! $firstSampleCase) {
-            $firstSampleCase = $testCasesData[0];
+        if (! $sampleInFile) {
+            $sampleInFile = $testCasesData[0]['in_file'];
+            $sampleOutFile = $testCasesData[0]['out_file'];
         }
 
-        $sampleInput = $firstSampleCase['input'];
-        $sampleOutput = $firstSampleCase['output'];
+        $sampleInput = (string) file_get_contents($sampleInFile);
+        $sampleOutput = (string) file_get_contents($sampleOutFile);
 
         $code = ! empty($exercise->basename) ? $exercise->basename : Str::slug($exercise->short_name);
         $code = substr($code, 0, 50);
@@ -306,8 +301,8 @@ class PolygonPublishService
             $inputRel = "{$bankInputDirRel}/{$i}";
             $outputRel = "{$bankOutputDirRel}/{$i}";
 
-            Storage::disk('local')->put($inputRel, $tc['input']);
-            Storage::disk('local')->put($outputRel, $tc['output']);
+            copy($tc['in_file'], Storage::disk('local')->path($inputRel));
+            copy($tc['out_file'], Storage::disk('local')->path($outputRel));
         }
 
         // Update PolygonExercise

@@ -747,12 +747,23 @@
                                     <!-- Entrada (.in) -->
                                     <div class="space-y-1.5">
                                         <div class="flex items-center justify-between">
-                                            <span class="font-semibold text-muted-foreground font-mono text-[11px]">Entrada (.in)</span>
-                                            <button type="button"
-                                                    @click="copyToClipboard(c.input, 'in_' + c.number)"
-                                                    class="text-primary hover:underline text-[11px] flex items-center gap-1">
-                                                {{ copiedKey === 'in_' + c.number ? '✓ Copiado!' : 'Copiar' }}
-                                            </button>
+                                            <span class="font-semibold text-muted-foreground font-mono text-[11px] flex items-center gap-1.5">
+                                                <span>Entrada (.in)</span>
+                                                <span v-if="c.is_truncated" class="text-[10px] text-amber-600 bg-amber-500/10 px-1.5 py-0.2 rounded font-sans">Prévia</span>
+                                            </span>
+                                            <div class="flex items-center gap-2">
+                                                <a v-if="(c.input_bytes || 0) > 2048"
+                                                   :href="'/api/backend/polygon/' + (exercise.id || props.exerciseId) + '/cases/' + c.number + '/download?type=in'"
+                                                   download
+                                                   class="text-primary hover:underline text-[11px]">
+                                                    Baixar (.in)
+                                                </a>
+                                                <button type="button"
+                                                        @click="copyToClipboard(c.input, 'in_' + c.number)"
+                                                        class="text-primary hover:underline text-[11px] flex items-center gap-1">
+                                                    {{ copiedKey === 'in_' + c.number ? '✓ Copiado!' : 'Copiar' }}
+                                                </button>
+                                            </div>
                                         </div>
                                         <pre class="surface p-3 rounded-lg border font-mono max-h-48 overflow-y-auto whitespace-pre-wrap select-all leading-relaxed text-xs">{{ c.input || '(Vazio)' }}</pre>
                                     </div>
@@ -764,11 +775,19 @@
                                                 <span>Saída Oficial (.out)</span>
                                                 <span class="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] px-1 rounded font-normal">ACCEPT</span>
                                             </span>
-                                            <button type="button"
-                                                    @click="copyToClipboard(c.output, 'out_' + c.number)"
-                                                    class="text-primary hover:underline text-[11px] flex items-center gap-1">
-                                                {{ copiedKey === 'out_' + c.number ? '✓ Copiado!' : 'Copiar' }}
-                                            </button>
+                                            <div class="flex items-center gap-2">
+                                                <a v-if="(c.output_bytes || 0) > 2048"
+                                                   :href="'/api/backend/polygon/' + (exercise.id || props.exerciseId) + '/cases/' + c.number + '/download?type=out'"
+                                                   download
+                                                   class="text-primary hover:underline text-[11px]">
+                                                    Baixar (.out)
+                                                </a>
+                                                <button type="button"
+                                                        @click="copyToClipboard(c.output, 'out_' + c.number)"
+                                                        class="text-primary hover:underline text-[11px] flex items-center gap-1">
+                                                    {{ copiedKey === 'out_' + c.number ? '✓ Copiado!' : 'Copiar' }}
+                                                </button>
+                                            </div>
                                         </div>
                                         <pre class="bg-emerald-500/5 dark:bg-emerald-950/20 p-3 rounded-lg border border-emerald-500/20 text-emerald-900 dark:text-emerald-200 font-mono max-h-48 overflow-y-auto whitespace-pre-wrap select-all leading-relaxed text-xs">{{ c.output || '(Sem saída gerada)' }}</pre>
                                     </div>
@@ -977,12 +996,23 @@
                 <div class="space-y-3 text-xs">
                     <div>
                         <div class="flex items-center justify-between mb-1">
-                            <span class="font-semibold text-muted-foreground">Entrada (.in):</span>
-                            <button type="button"
-                                    @click="copyToClipboard(inspectingTest?.input || inspectingTest?.preview, 'modal_in')"
-                                    class="text-primary hover:underline text-[11px] flex items-center gap-1">
-                                {{ copiedKey === 'modal_in' ? '✓ Copiado!' : 'Copiar' }}
-                            </button>
+                            <span class="font-semibold text-muted-foreground flex items-center gap-1.5">
+                                <span>Entrada (.in):</span>
+                                <span v-if="inspectingTest?.is_truncated" class="text-[10px] text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded font-normal">Prévia</span>
+                            </span>
+                            <div class="flex items-center gap-2">
+                                <a v-if="(inspectingTest?.size_bytes || inspectingTest?.input_bytes || 0) > 2048"
+                                   :href="'/api/backend/polygon/' + (exercise.id || props.exerciseId) + '/cases/' + inspectingTest?.number + '/download?type=in'"
+                                   download
+                                   class="text-primary hover:underline text-[11px]">
+                                    Baixar (.in)
+                                </a>
+                                <button type="button"
+                                        @click="copyToClipboard(inspectingTest?.input || inspectingTest?.preview, 'modal_in')"
+                                        class="text-primary hover:underline text-[11px] flex items-center gap-1">
+                                    {{ copiedKey === 'modal_in' ? '✓ Copiado!' : 'Copiar' }}
+                                </button>
+                            </div>
                         </div>
                         <pre class="surface p-3 rounded-lg border font-mono max-h-40 overflow-y-auto whitespace-pre-wrap select-all">{{ inspectingTest?.input || inspectingTest?.preview || '(Vazio)' }}</pre>
                     </div>
@@ -992,12 +1022,20 @@
                                 <span>Saída Oficial (.out):</span>
                                 <span v-if="inspectingTest?.output" class="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] px-1 rounded font-normal">ACCEPT</span>
                             </span>
-                            <button v-if="inspectingTest?.output"
-                                    type="button"
-                                    @click="copyToClipboard(inspectingTest?.output, 'modal_out')"
-                                    class="text-primary hover:underline text-[11px] flex items-center gap-1">
-                                {{ copiedKey === 'modal_out' ? '✓ Copiado!' : 'Copiar' }}
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <a v-if="inspectingTest?.output && (inspectingTest?.output_bytes || 0) > 2048"
+                                   :href="'/api/backend/polygon/' + (exercise.id || props.exerciseId) + '/cases/' + inspectingTest?.number + '/download?type=out'"
+                                   download
+                                   class="text-primary hover:underline text-[11px]">
+                                    Baixar (.out)
+                                </a>
+                                <button v-if="inspectingTest?.output"
+                                        type="button"
+                                        @click="copyToClipboard(inspectingTest?.output, 'modal_out')"
+                                        class="text-primary hover:underline text-[11px] flex items-center gap-1">
+                                    {{ copiedKey === 'modal_out' ? '✓ Copiado!' : 'Copiar' }}
+                                </button>
+                            </div>
                         </div>
                         <pre class="surface p-3 rounded-lg border font-mono max-h-40 overflow-y-auto whitespace-pre-wrap select-all"
                              :class="{ 'bg-emerald-500/5 dark:bg-emerald-950/20 border-emerald-500/30 text-emerald-900 dark:text-emerald-200': inspectingTest?.output }">{{ inspectingTest?.output || '(Gerado após calibração ACCEPT)' }}</pre>

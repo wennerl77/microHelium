@@ -70,6 +70,7 @@
         -->
         <ini name="memory_limit" value="512M"/>
         <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_URL" value="http://localhost" force="true"/>
         <!--
             Issue #49: the judge sandbox is mandatory in every real
             deployment (AutoJudgeService throws rather than run submitted

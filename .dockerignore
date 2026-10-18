@@ -40,8 +40,13 @@ Thumbs.db
 !/storage/framework/sessions/.gitkeep
 /storage/framework/views/*
 !/storage/framework/views/.gitkeep
-/storage/app/judge/*
-!/storage/app/judge/.gitkeep
+/storage/framework/testing/*
+!/storage/framework/testing/.gitkeep
+/storage/framework/testing
+/storage/app/*
+!/storage/app/.gitignore
+!/storage/app/.gitkeep
+!/storage/app/public/.gitkeep
 
 # Environment
 .env

@@ -1,7 +1,7 @@
 # MicroHelium Makefile
 # Docker commands for development and production
 
-.PHONY: help setup dev-up dev-up-cf dev-down prod-up prod-up-cf prod-down up-prod build up down restart dev logs shell migrate seed seed-admin backup-db restore-db fresh test lint format deploy rollback smoke composer npm artisan check-buildx dev-tools cloudflare-up cloudflare-down cloudflare-status
+.PHONY: help setup dev-up dev-up-cf dev-down prod-up prod-up-cf prod-down up-prod build up down restart dev logs shell migrate seed seed-admin seed-questions seed-templates seed-schools seed-full prova-1 backup-db restore-db fresh test lint format deploy rollback smoke composer npm artisan check-buildx dev-tools cloudflare-up cloudflare-down cloudflare-status fix-permissions watch
 
 # Toolchain profile for compilers (maratona = ~2.1 GB, scripting = ~2.3 GB, funcional = ~4.5 GB, completo = ~9.4 GB)
 JUDGE_PROFILE ?= maratona
@@ -28,6 +28,7 @@ help:
 	@echo ""
 	@echo "Banco de Dados & Backups:"
 	@echo "  make seed-admin  - Cria o usuário administrador padrão (seguro para produção)"
+	@echo "  make prova-1     - Importa as 22 questões da Prova 1 no Problem Bank e Polygon com C++ e 100+ testes"
 	@echo "  make backup-db   - Realiza backup completo do banco de dados (.sql)"
 	@echo "  make restore-db FILE=<path> - Restaura dump SQL completo no banco de dados"
 	@echo ""
@@ -40,7 +41,8 @@ help:
 	@echo "  make build [JUDGE_PROFILE=...] - Compila as imagens Docker com perfil (default: maratona)"
 	@echo "  make up          - Sobe os contêineres padrão"
 	@echo "  make down        - Para os contêineres padrão"
-	@echo "  make dev-tools   - Inicia phpMyAdmin e ferramentas adicionais"
+	@echo "  make fix-permissions - Corrige permissões de storage/ e bootstrap/cache para o seu usuário"
+	@echo "  make watch       - Inicia o servidor Vite com Hot Module Replacement (HMR)"
 	@echo "  make logs        - Exibe logs dos contêineres"
 	@echo "  make shell       - Abre shell no contêiner da aplicação"
 	@echo ""
@@ -54,6 +56,14 @@ help:
 	@echo "  make rollback PREV=<tag> - Reverte para imagem anterior"
 	@echo "  make smoke       - Executa testes de fumaça pós-deploy"
 	@echo "  make test        - Executa testes PHPUnit"
+	@echo ""
+	@echo "Seeders & Carga de Dados:"
+	@echo "  make seed-admin     - Cria o usuário administrador padrão"
+	@echo "  make seed-questions - Carrega as 22 questões no Problem Bank e Polygon"
+	@echo "  make seed-templates - Cria os templates fixos de prova N1, N2 e N3"
+	@echo "  make seed-schools   - Importa escolas, equipes e participantes do CSV"
+	@echo "  make prova-1        - Importa questões, templates e escolas da Prova 1"
+	@echo "  make seed-full      - Executa migrações e todos os seeders de uma vez"
 
 # =============================================================================
 # Desenvolvimento (com Seeders)
@@ -141,6 +151,41 @@ seed:
 
 seed-admin:
 	@docker compose exec app php artisan db:seed --class=AdminSeeder --force
+
+seed-questions:
+	@echo "🌱 Carregando 22 questões no Problem Bank e Polygon..."
+	@docker compose exec -T app php artisan db:seed --class=ProvaProblemBankSeeder --force
+	@docker compose exec -T app php artisan db:seed --class=ProvaPolygonSeeder --force
+
+seed-templates:
+	@echo "🌱 Criando templates fixos N1, N2 e N3 da Maratona Turing..."
+	@docker compose exec -T app php artisan db:seed --class=ExamTemplateSeeder --force
+
+seed-schools:
+	@echo "🌱 Importando escolas, equipes por nível e participantes do CSV..."
+	@docker compose exec -T app php artisan db:seed --class=SchoolSeeder --force
+
+seed-full: migrate seed-admin seed-questions seed-templates seed-schools
+	@echo ""
+	@echo "========================================================="
+	@echo "✅ SEED FULL CONCLUÍDO COM SUCESSO!"
+	@echo "========================================================="
+	@echo "  - Migrações aplicadas"
+	@echo "  - Administrador criado (admin / secret123)"
+	@echo "  - 22 questões no Problem Bank & Polygon"
+	@echo "  - Templates de prova N1, N2 e N3 criados"
+	@echo "  - 10 Escolas, 46 Equipes e 129 Alunos importados"
+	@echo "========================================================="
+
+prova-1:
+	@echo "Importando questões, templates e escolas da Prova 1..."
+	@if docker compose ps --filter "name=microhelium-app" --filter "status=running" -q | grep -q .; then \
+		docker compose exec -T app php artisan db:seed --class=Prova1Seeder --force; \
+	elif [ -n "$$(docker ps --filter "name=microhelium-db" --filter "status=running" -q)" ]; then \
+		docker compose run --rm -T artisan db:seed --class=Prova1Seeder --force; \
+	else \
+		docker compose run --rm -T artisan db:seed --class=Prova1Seeder --force; \
+	fi
 
 backup-db:
 	@mkdir -p backups
@@ -246,6 +291,15 @@ npm-dev:
 
 npm-build:
 	@docker compose exec node npm run build
+
+watch:
+	@docker compose --profile dev up node
+
+fix-permissions:
+	@echo "Ajustando permissões de storage e bootstrap/cache..."
+	@docker run --rm -v "$(CURDIR):/app" alpine chown -R $$(id -u):$$(id -g) /app/storage /app/bootstrap/cache
+	@chmod -R u+rwX,go+rX storage bootstrap/cache 2>/dev/null || true
+	@echo "Permissões corrigidas com sucesso!"
 
 # =============================================================================
 # Produção (sem Seeders)

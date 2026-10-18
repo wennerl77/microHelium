@@ -70,9 +70,24 @@ class ContestWizardController extends Controller
             'updated_at' => now(),
         ]);
 
+        self::provisionContestScaffolding($contestId, $request->input('languages', []));
+
+        $addedCount = self::addProblemsFromBank($contestId, $request->input('problems', []));
+
+        return redirect()->route('backend.configurations')->with('success', 'Maratona "' . $validated['name'] . '" criada com ' . $addedCount . ' problemas!');
+    }
+
+    /**
+     * Site, languages and default verdicts every new contest needs. Shared
+     * between the wizard and App\Services\ExamScheduler so the two paths
+     * cannot drift apart.
+     *
+     * @param  array<int, string>  $selectedLanguages  extensions to enable
+     */
+    public static function provisionContestScaffolding(int $contestId, array $selectedLanguages): void
+    {
         DB::table('sites')->insert(['contest_id' => $contestId, 'name' => 'Main Site', 'is_active' => true, 'permit_logins' => true, 'created_at' => now(), 'updated_at' => now()]);
 
-        $selectedLanguages = $request->input('languages', []);
         $allLanguages = \App\Models\Language::getDefaultLanguages();
         foreach ($allLanguages as $lang) {
             DB::table('languages')->insert([
@@ -96,10 +111,6 @@ class ContestWizardController extends Controller
         foreach ($defaultAnswers as $answer) {
             DB::table('answers')->insert(array_merge($answer, ['contest_id' => $contestId, 'created_at' => now(), 'updated_at' => now()]));
         }
-
-        $addedCount = self::addProblemsFromBank($contestId, $request->input('problems', []));
-
-        return redirect()->route('backend.configurations')->with('success', 'Maratona "' . $validated['name'] . '" criada com ' . $addedCount . ' problemas!');
     }
 
     /**
@@ -110,15 +121,16 @@ class ContestWizardController extends Controller
      * see issue #34 -- previously there was no way to add a problem to a
      * contest after the wizard's initial creation).
      *
+     * @param  bool  $preserveOrder  when true, problems (and their letters) follow the order of $problemBankIds instead of the bank's row order
      * @return int number of problems actually added
      */
-    public static function addProblemsFromBank(int $contestId, array $problemBankIds): int
+    public static function addProblemsFromBank(int $contestId, array $problemBankIds, bool $preserveOrder = false): int
     {
         if (empty($problemBankIds)) {
             return 0;
         }
 
-        return DB::transaction(function () use ($contestId, $problemBankIds) {
+        return DB::transaction(function () use ($contestId, $problemBankIds, $preserveOrder) {
             // Lock this contest's existing problems for the duration of the
             // transaction: without it, two concurrent calls (two admins, or
             // a double-submit) could both read the same "next sort_order"
@@ -129,6 +141,10 @@ class ContestWizardController extends Controller
             $existingBasenames = DB::table('problems')->where('contest_id', $contestId)->pluck('basename');
 
             $problemBank = DB::table('problem_bank')->whereIn('id', $problemBankIds)->where('is_active', true)->get();
+            if ($preserveOrder) {
+                $order = array_flip(array_values($problemBankIds));
+                $problemBank = $problemBank->sortBy(fn ($p) => $order[$p->id] ?? PHP_INT_MAX)->values();
+            }
             $letters = range('A', 'Z');
             $colors = [['name' => 'Vermelho', 'hex' => '#EF4444'], ['name' => 'Azul', 'hex' => '#3B82F6'], ['name' => 'Verde', 'hex' => '#22C55E'], ['name' => 'Amarelo', 'hex' => '#EAB308'], ['name' => 'Roxo', 'hex' => '#A855F7'], ['name' => 'Rosa', 'hex' => '#EC4899'], ['name' => 'Laranja', 'hex' => '#F97316'], ['name' => 'Ciano', 'hex' => '#06B6D4'], ['name' => 'Indigo', 'hex' => '#6366F1'], ['name' => 'Teal', 'hex' => '#14B8A6']];
 

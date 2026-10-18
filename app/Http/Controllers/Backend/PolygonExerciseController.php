@@ -15,6 +15,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use InvalidArgumentException;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class PolygonExerciseController extends Controller
 {
@@ -121,6 +122,43 @@ class PolygonExerciseController extends Controller
     }
 
     /**
+     * Reads a safe preview of a test case file without exhausting memory.
+     *
+     * @return array{content: ?string, size: int, is_truncated: bool, preview: string}
+     */
+    public static function readPreview(string $path, int $maxBytes = 2048): array
+    {
+        if (! file_exists($path)) {
+            return ['content' => null, 'size' => 0, 'is_truncated' => false, 'preview' => ''];
+        }
+
+        $size = (int) @filesize($path);
+        if ($size === 0) {
+            return ['content' => '', 'size' => 0, 'is_truncated' => false, 'preview' => ''];
+        }
+
+        $fp = @fopen($path, 'r');
+        if (! $fp) {
+            return ['content' => '', 'size' => $size, 'is_truncated' => false, 'preview' => ''];
+        }
+
+        $bytesToRead = min($size, $maxBytes);
+        $chunk = fread($fp, $bytesToRead) ?: '';
+        fclose($fp);
+
+        $isTruncated = $size > $maxBytes;
+        $content = $isTruncated ? $chunk . "\n... [truncado, tamanho total: " . number_format($size) . " bytes]" : $chunk;
+        $preview = mb_substr($chunk, 0, 256);
+
+        return [
+            'content' => $content,
+            'size' => $size,
+            'is_truncated' => $isTruncated,
+            'preview' => $preview,
+        ];
+    }
+
+    /**
      * Shows a polygon exercise draft with its generated test cases and available contests.
      */
     public function show(string|int $id): JsonResponse
@@ -136,8 +174,9 @@ class PolygonExerciseController extends Controller
                 $number = $idx + 1;
                 $outFile = preg_replace('/\.in$/', '.out', $inFile);
                 $hasOut = file_exists($outFile);
-                $inContent = @file_get_contents($inFile);
-                $outContent = $hasOut ? @file_get_contents($outFile) : null;
+
+                $inData = self::readPreview($inFile, 2048);
+                $outData = $hasOut ? self::readPreview($outFile, 2048) : null;
 
                 $isSample = false;
                 if (!empty($exercise->manual_tests) && is_array($exercise->manual_tests)) {
@@ -158,11 +197,14 @@ class PolygonExerciseController extends Controller
                     'number' => $number,
                     'input_file' => $inFile,
                     'output_file' => $hasOut ? $outFile : null,
-                    'size_bytes' => (int) @filesize($inFile),
+                    'size_bytes' => $inData['size'],
+                    'input_bytes' => $inData['size'],
+                    'output_bytes' => $outData['size'] ?? 0,
                     'is_sample' => $isSample,
-                    'input' => $inContent !== false ? $inContent : '',
-                    'output' => $outContent !== false ? $outContent : null,
-                    'preview' => mb_substr($inContent !== false ? $inContent : '', 0, 256),
+                    'is_truncated' => $inData['is_truncated'] || ($outData['is_truncated'] ?? false),
+                    'input' => $inData['content'] ?? '',
+                    'output' => $outData['content'] ?? null,
+                    'preview' => $inData['preview'],
                 ];
             }
         }
@@ -179,6 +221,52 @@ class PolygonExerciseController extends Controller
             'contests' => $contests,
             ...$data,
         ], 200);
+    }
+
+    /**
+     * Downloads an individual test case file (.in or .out) via direct streaming.
+     */
+    public function downloadTestCase(Request $request, string|int $id, int $caseNumber): BinaryFileResponse
+    {
+        $exercise = PolygonExercise::findOrFail($id);
+        $testsDir = $exercise->getTempDirectory() . '/tests';
+
+        $type = $request->query('type', 'in') === 'out' ? 'out' : 'in';
+        $candidates = [
+            $testsDir . '/' . sprintf('%03d.%s', $caseNumber, $type),
+            $testsDir . '/' . sprintf('%d.%s', $caseNumber, $type),
+        ];
+
+        $filePath = null;
+        foreach ($candidates as $candidate) {
+            if (file_exists($candidate)) {
+                $filePath = $candidate;
+                break;
+            }
+        }
+
+        if (! $filePath) {
+            $inFiles = glob($testsDir . '/*.in') ?: [];
+            natsort($inFiles);
+            $inFiles = array_values($inFiles);
+            $idx = $caseNumber - 1;
+            if (isset($inFiles[$idx])) {
+                $candidate = $type === 'out' ? preg_replace('/\.in$/', '.out', $inFiles[$idx]) : $inFiles[$idx];
+                if (file_exists($candidate)) {
+                    $filePath = $candidate;
+                }
+            }
+        }
+
+        if (! $filePath || ! file_exists($filePath)) {
+            abort(404, "Arquivo de teste caso #{$caseNumber} ({$type}) não encontrado.");
+        }
+
+        $baseDownloadName = sprintf('%s_%03d.%s', $exercise->basename, $caseNumber, $type);
+
+        return response()->download($filePath, $baseDownloadName, [
+            'Content-Type' => 'text/plain',
+        ]);
     }
 
     /**

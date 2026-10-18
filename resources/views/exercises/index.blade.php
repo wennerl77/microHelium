@@ -18,7 +18,9 @@
                 <div>
                     <h2 class="text-xl font-semibold text-foreground">{{ __('Lista de Problemas') }}</h2>
                     <p class="text-sm text-muted-foreground">
-                        @if($contest)
+                        @if(!empty($notStartedYet))
+                            {{ $contest->name }} &mdash; {{ __('aguarde o horário de início para acessar as questões') }}
+                        @elseif($contest)
                             {{ $contest->name }} &mdash; {{ __('selecione um problema para ver o enunciado e enviar sua solução') }}
                         @else
                             {{ __('Nenhuma competição ativa no momento') }}
@@ -28,6 +30,23 @@
             </div>
         </div>
 
+        @if(!empty($notStartedYet))
+        <div class="p-8 text-center space-y-4">
+            <div class="inline-flex p-3 bg-primary-soft rounded-full text-primary mb-2">
+                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-foreground">{{ __('A prova ainda não começou') }}</h3>
+            <p class="text-sm text-muted-foreground max-w-md mx-auto">
+                {{ __('As questões serão liberadas automaticamente no início da competição, programado para') }}
+                <span class="font-medium text-foreground">{{ $contest->start_time ? $contest->start_time->format('d/m/Y \à\s H:i') : '' }}</span>.
+            </p>
+            <div class="pt-2">
+                <contest-timer></contest-timer>
+            </div>
+        </div>
+        @else
         @include('partials.table-filter', ['tableId' => 'exercises-index-table', 'searchLabel' => __('problemas'), 'difficulty' => false])
         <div class="overflow-x-auto">
             <table id="exercises-index-table" class="w-full">
@@ -108,6 +127,7 @@
                 </tbody>
             </table>
         </div>
+        @endif
     </div>
 </div>
 @endsection
