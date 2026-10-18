@@ -25,3 +25,10 @@ npm-debug.log
 /backups
 *.sql
 *.sql.gz
+!database/sql/*.sql
+/.npm-cache
+
+# Dados sensíveis de inscrições e participantes
+/database/data/*.csv
+!/database/data/*.example.csv
+

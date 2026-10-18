@@ -108,10 +108,16 @@ export function initializeForms(dialogs) {
                     button.textContent = 'Enviando…';
                 }
                 // aria-disabled keeps the submitter's name/value in native form serialization.
-                pending.set(form, () => {
+                const reset = () => {
                     form.removeAttribute('aria-busy');
                     status.remove();
                     if (button) { button.innerHTML = previous; button.removeAttribute('aria-disabled'); }
+                    pending.delete(form);
+                };
+                const timeoutId = setTimeout(reset, 15000);
+                pending.set(form, () => {
+                    clearTimeout(timeoutId);
+                    reset();
                 });
             });
         });

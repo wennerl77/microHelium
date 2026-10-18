@@ -9,9 +9,13 @@ services:
     container_name: microhelium-app
     restart: unless-stopped
     working_dir: /var/www/html
+    environment:
+      - APP_TIMEZONE=${APP_TIMEZONE:-America/Sao_Paulo}
+      - TZ=${APP_TIMEZONE:-America/Sao_Paulo}
     volumes:
       - .:/var/www/html
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
+      - ./docker/php/dev-opcache.ini:/usr/local/etc/php/conf.d/zz-dev-opcache.ini
     networks:
       - microhelium
     depends_on:
@@ -34,6 +38,9 @@ services:
     container_name: microhelium-queue
     restart: unless-stopped
     working_dir: /var/www/html
+    environment:
+      - APP_TIMEZONE=${APP_TIMEZONE:-America/Sao_Paulo}
+      - TZ=${APP_TIMEZONE:-America/Sao_Paulo}
     command: php artisan queue:work --sleep=1 --tries=3 --max-time=3600
     volumes:
       - .:/var/www/html

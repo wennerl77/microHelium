@@ -11,6 +11,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -47,6 +48,10 @@ class AppServiceProvider extends ServiceProvider
         // nonce SecurityHeaders generated, so the policy can refuse inline
         // script in general without refusing ours:  <script @cspNonce>
         Blade::directive('cspNonce', fn () => "<?php echo 'nonce=\"'.e(request()->attributes->get(\\".SecurityHeaders::class."::NONCE_ATTRIBUTE)).'\"'; ?>");
+
+        if ($this->app->environment('production') || request()->header('X-Forwarded-Proto') === 'https') {
+            URL::forceScheme('https');
+        }
     }
 
     /**

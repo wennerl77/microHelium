@@ -7,7 +7,11 @@ services:
     command: tunnel --no-autoupdate run
 
     environment:
-      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?Defina TUNNEL_TOKEN no arquivo .env}
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
     networks:
       - microhelium
 

@@ -15,4 +15,5 @@ Route::prefix('api/backend/polygon')->middleware(['auth', 'admin'])->group(funct
     Route::post('/{id}/generate-tests', [PolygonExerciseController::class, 'generateTests'])->name('api.backend.polygon.generate-tests');
     Route::post('/{id}/calibrate', [PolygonExerciseController::class, 'calibrate'])->name('api.backend.polygon.calibrate');
     Route::post('/{id}/publish', [PolygonExerciseController::class, 'publish'])->name('api.backend.polygon.publish');
+    Route::get('/{id}/cases/{caseNumber}/download', [PolygonExerciseController::class, 'downloadTestCase'])->name('api.backend.polygon.case-download');
 });

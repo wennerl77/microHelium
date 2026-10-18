@@ -1,0 +1,100 @@
+gen manual 0 1 > $
+gen manual 0 1000000000000000000 > $
+gen manual 1 1 > $
+gen manual 2 2 > $
+gen manual 1 2 > $
+gen manual 2 1 > $
+gen manual 1000000000000000000 1000000000000000000 > $
+gen manual 1000000000000000000 1 > $
+gen manual 999999999999999999 1000000000000000000 > $
+gen manual 1000000000000000000 999999999999999999 > $
+gen small 1 > $
+gen small 2 > $
+gen small 3 > $
+gen small 4 > $
+gen small 5 > $
+gen small 6 > $
+gen small 7 > $
+gen small 8 > $
+gen small 9 > $
+gen small 10 > $
+gen small 11 > $
+gen small 12 > $
+gen small 13 > $
+gen small 14 > $
+gen n_less_m 100 > $
+gen n_less_m 200 > $
+gen n_less_m 300 > $
+gen n_less_m 400 > $
+gen n_less_m 500 > $
+gen n_less_m 600 > $
+gen n_less_m 700 > $
+gen n_less_m 800 > $
+gen n_less_m 900 > $
+gen n_less_m 1000 > $
+gen n_less_m 1100 > $
+gen n_less_m 1200 > $
+gen n_less_m 1300 > $
+gen n_less_m 1400 > $
+gen n_less_m 1500 > $
+gen n_less_m 1600 > $
+gen n_less_m 1700 > $
+gen n_less_m 1800 > $
+gen n_less_m 1900 > $
+gen n_eq_m 77 > $
+gen n_eq_m 154 > $
+gen n_eq_m 231 > $
+gen n_eq_m 308 > $
+gen n_eq_m 385 > $
+gen n_eq_m 462 > $
+gen n_eq_m 539 > $
+gen n_eq_m 616 > $
+gen n_eq_m 693 > $
+gen n_eq_m 770 > $
+gen n_eq_m 847 > $
+gen n_eq_m 924 > $
+gen n_eq_m 1001 > $
+gen n_eq_m 1078 > $
+gen mult 13 > $
+gen mult 26 > $
+gen mult 39 > $
+gen mult 52 > $
+gen mult 65 > $
+gen mult 78 > $
+gen mult 91 > $
+gen mult 104 > $
+gen mult 117 > $
+gen mult 130 > $
+gen mult 143 > $
+gen mult 156 > $
+gen mult 169 > $
+gen mult 182 > $
+gen mult 195 > $
+gen mult 208 > $
+gen mult 221 > $
+gen mult 234 > $
+gen mult 247 > $
+gen random 31 > $
+gen random 62 > $
+gen random 93 > $
+gen random 124 > $
+gen random 155 > $
+gen random 186 > $
+gen random 217 > $
+gen random 248 > $
+gen random 279 > $
+gen random 310 > $
+gen random 341 > $
+gen random 372 > $
+gen random 403 > $
+gen random 434 > $
+gen random 465 > $
+gen random 496 > $
+gen random 527 > $
+gen random 558 > $
+gen random 589 > $
+gen random 620 > $
+gen random 651 > $
+gen random 682 > $
+gen random 713 > $
+gen random 744 > $

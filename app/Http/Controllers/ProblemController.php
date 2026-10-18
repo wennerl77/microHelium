@@ -57,16 +57,21 @@ class ProblemController extends Controller
         //
         // The same rule, applied in one more place. A signed-in member of the
         // contest still sees their own problems either way.
+        $user = auth()->user();
+        $notStartedYet = false;
+
         if ($contest && ! $this->mayList($contest)) {
             $contest = null;
+        } elseif ($contest && ! $contest->maySeeProblems($user)) {
+            $notStartedYet = true;
         }
 
-        $problems = $contest
+        $problems = ($contest && ! $notStartedYet)
             ? $contest->problems()->orderBy('short_name')->get()
             : collect();
 
         $solvedProblemIds = collect();
-        if ($contest && auth()->check()) {
+        if ($contest && ! $notStartedYet && auth()->check()) {
             $solvedProblemIds = Score::where('contest_id', $contest->id)
                 ->where('user_id', auth()->id())
                 ->where('is_solved', true)
@@ -77,12 +82,18 @@ class ProblemController extends Controller
             'contest' => $contest,
             'problems' => $problems,
             'solvedProblemIds' => $solvedProblemIds,
+            'notStartedYet' => $notStartedYet,
         ]);
     }
 
     public function show(Problem $problem)
     {
         $this->authorizeProblemVisibility($problem);
+
+        if (! $problem->contest->maySeeProblems(auth()->user())) {
+            return redirect()->route('exercises')
+                ->with('error', __('A prova ainda não começou. As questões serão liberadas no horário de início.'));
+        }
 
         // Issue #137: a problem imported from a BOCA package has its real
         // statement in description/, not in the plain-text `description`

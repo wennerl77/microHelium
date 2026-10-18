@@ -31,8 +31,16 @@ class ProblemController extends Controller
         // of an event that had not opened yet. The boundary is the contest's
         // own visibility rule, the same one show() and the web-side listing
         // (#135) apply.
+        $user = auth()->user();
+        $isStaff = $user?->isAdmin() || $user?->isJudge();
+
         $problems = Problem::query()
-            ->whereHas('contest', fn ($q) => $q->visibleTo(auth()->user()))
+            ->whereHas('contest', function ($q) use ($user, $isStaff) {
+                $q->visibleTo($user);
+                if (! $isStaff) {
+                    $q->whereNotNull('start_time')->where('start_time', '<=', now());
+                }
+            })
             ->when($contestId, fn ($q) => $q->where('contest_id', $contestId))
             ->where('is_fake', false)
             ->with(['contest:id,name'])
@@ -184,6 +192,10 @@ class ProblemController extends Controller
     {
         $this->authorizeContestVisibility($problem->contest);
 
+        if (! $problem->contest->maySeeProblems(auth()->user())) {
+            abort(404);
+        }
+
         $problem->load('contest');
         $problem->loadCount(['testCases', 'runs', 'clarifications']);
 
@@ -265,6 +277,10 @@ class ProblemController extends Controller
         // for a contest that had not started to anyone who guessed the
         // problem id -- the pre-contest statement leak (issue #134).
         $this->authorizeContestVisibility($problem->contest);
+
+        if (! $problem->contest->maySeeProblems(auth()->user())) {
+            abort(404);
+        }
 
         $path = "problems/{$problem->contest_id}/{$problem->basename}/description/{$problem->description_file}";
 

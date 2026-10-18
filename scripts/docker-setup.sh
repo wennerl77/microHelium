@@ -3,6 +3,11 @@ set -euo pipefail
 
 echo "=== MicroHelium Zero-Host Setup ==="
 
+if ! docker info >/dev/null 2>&1; then
+    echo "ERRO: sem permissão no Docker. Rode 'sudo usermod -aG docker \$USER' e reabra a sessão (ou use sudo)." >&2
+    exit 1
+fi
+
 # Suporte a flag --cloudflare via CLI ou variável de ambiente CLOUDFLARE
 ENABLE_CLOUDFLARE="${CLOUDFLARE:-false}"
 for arg in "$@"; do
@@ -45,6 +50,16 @@ export APP_PORT
 
 # 2. Limpeza de resíduos de desenvolvimento anteriores
 rm -f public/hot
+mkdir -p .npm-cache node_modules storage/framework/views storage/framework/cache storage/framework/sessions storage/logs storage/app
+if [ "$(id -u)" -eq 0 ]; then
+    # Sob sudo, evita que o cache/node_modules/storage fiquem com dono root
+    chown -R "${CURRENT_UID}:${CURRENT_GID}" .npm-cache node_modules storage bootstrap/cache
+else
+    # Sem sudo, caso haja resíduos de contêineres anteriores (ex.: testes) com dono root,
+    # normaliza a posse para o usuário atual antes do build
+    docker run --rm -v "$(pwd):/app" alpine chown -R "${CURRENT_UID}:${CURRENT_GID}" /app/storage /app/bootstrap/cache 2>/dev/null || true
+fi
+chmod -R u+rwX,go+rX storage bootstrap/cache 2>/dev/null || true
 
 # 3. Trap de Limpeza dos Dockerfiles Temporários
 cleanup() {
@@ -76,7 +91,18 @@ echo "Instalando dependências do Composer..."
 docker compose run --rm -T composer install --optimize-autoloader
 
 echo "Instalando dependências frontend e compilando assets Vite..."
-docker compose run --rm -T node sh -c "npm ci && npm run build"
+NPM_FLAGS="--fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000 --fetch-timeout=300000 --prefer-offline --no-audit --no-fund"
+for attempt in 1 2 3; do
+    if docker compose run --rm -T --remove-orphans node sh -c "npm ci $NPM_FLAGS && npm run build"; then
+        break
+    fi
+    if [ "$attempt" -eq 3 ]; then
+        echo "Falha ao instalar dependências npm após 3 tentativas." >&2
+        exit 1
+    fi
+    echo "Tentativa $attempt falhou (rede ou permissões?). Repetindo em 10s..."
+    sleep 10
+done
 
 # 6. Inicialização com Espera Saudável do Banco de Dados
 echo "Subindo MySQL e Redis com espera de healthcheck..."
@@ -96,6 +122,14 @@ docker compose run --rm -T artisan storage:link --force
 echo "Executando migrações do banco de dados..."
 docker compose run --rm -T artisan migrate --force
 
+# Views Blade compiladas corrompidas/obsoletas viram páginas em branco; com
+# opcache.validate_timestamps=0 o php-fpm também as mantém em cache, então reinicia o app se estiver no ar.
+echo "Limpando views compiladas..."
+docker compose run --rm -T artisan view:clear
+if [ -n "$(docker compose ps --status running -q app 2>/dev/null)" ]; then
+    docker compose restart app >/dev/null
+fi
+
 if [ "${RUN_SEEDERS:-true}" = "true" ]; then
     echo "Populando dados iniciais e usuário administrador (Seed)..."
     docker compose run --rm -T artisan db:seed --force
@@ -111,6 +145,7 @@ if [ -n "${COMPOSE_PROFILE:-}" ]; then
     PROFILE_ARGS="--profile ${COMPOSE_PROFILE}"
 fi
 docker compose ${PROFILE_ARGS} up -d
+docker compose restart webserver >/dev/null 2>&1 || true
 
 # 9. Verificação de Fumaça com Retry
 echo "Aguardando estabilização dos serviços web..."
