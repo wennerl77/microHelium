@@ -46,6 +46,12 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app'),
+            // Flysystem's default is 0700 for private dirs, which locks out
+            // any other uid (the prod services run as DOCKER_UID).
+            'permissions' => [
+                'dir' => ['public' => 0775, 'private' => 0775],
+                'file' => ['public' => 0664, 'private' => 0664],
+            ],
         ],
 
         'public' => [

@@ -36,7 +36,7 @@
                     <select id="language_id" name="language_id" required class="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground focus:ring-2 focus:ring-primary focus:border-transparent transition-colors">
                         <option value="">{{ __('Selecione a linguagem...') }}</option>
                         @foreach($languages as $lang)
-                            <option value="{{ $lang->id }}" @selected(old('language_id') == $lang->id)>{{ $lang->name }}</option>
+                            <option value="{{ $lang->id }}" @selected(old('language_id') == $lang->id)>{{ $lang->friendly_name ?? $lang->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -138,7 +138,7 @@
                 <div class="flex flex-wrap gap-2">
                     @foreach($languages as $lang)
                         <span class="px-2 py-1 text-xs font-medium bg-primary-soft text-primary rounded">
-                            {{ $lang->name }}
+                            {{ $lang->friendly_name ?? $lang->name }}
                         </span>
                     @endforeach
                 </div>
@@ -174,6 +174,12 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
                         {{ __('Escreva na saida padrao (stdout)') }}
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {{ __('Em Java, voce pode usar qualquer nome de classe (ex: public class Main ou Solucao). Nao declare pacotes (package).') }}
                     </li>
                 </ul>
             </div>

@@ -324,7 +324,7 @@ class PracticeController extends Controller
             ]);
         }
 
-        return [$this->submissions->filenameFor($language), $source];
+        return [$this->submissions->filenameFor($language, 'main', $source), $source];
     }
 
     /**
@@ -367,7 +367,7 @@ class PracticeController extends Controller
             ]);
         }
 
-        return [$this->submissions->filenameFor($language, $file->getClientOriginalName()), $source];
+        return [$this->submissions->filenameFor($language, $file->getClientOriginalName(), $source), $source];
     }
 
     /**

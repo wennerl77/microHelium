@@ -38,6 +38,42 @@ class Language extends Model
     }
 
     /**
+     * The official standard languages enabled for contests.
+     * Restricts student submission choices to C, C++, Java, Python 3, and JavaScript.
+     */
+    public const DEFAULT_CONTEST_LANGUAGES = [
+        'c_gcc13',
+        'cpp_gpp13',
+        'java21',
+        'py3',
+        'js_node24',
+    ];
+
+    /**
+     * User-facing simplified display names for student interfaces.
+     */
+    public const FRIENDLY_NAMES = [
+        'c_gcc13' => 'C',
+        'c' => 'C',
+        'cpp_gpp13' => 'C++',
+        'cpp' => 'C++',
+        'java21' => 'Java',
+        'java' => 'Java',
+        'py3' => 'Python 3',
+        'py' => 'Python 3',
+        'js_node24' => 'JavaScript',
+        'js' => 'JavaScript',
+    ];
+
+    /**
+     * Simplified display name accessor for views.
+     */
+    public function getFriendlyNameAttribute(): string
+    {
+        return self::FRIENDLY_NAMES[$this->extension] ?? $this->name;
+    }
+
+    /**
      * Get default languages with unique extensions
      * Each language has a unique extension identifier to avoid database conflicts
      */

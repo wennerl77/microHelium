@@ -88,11 +88,16 @@ class ContestWizardController extends Controller
     {
         DB::table('sites')->insert(['contest_id' => $contestId, 'name' => 'Main Site', 'is_active' => true, 'permit_logins' => true, 'created_at' => now(), 'updated_at' => now()]);
 
+        if (empty($selectedLanguages)) {
+            $selectedLanguages = \App\Models\Language::DEFAULT_CONTEST_LANGUAGES;
+        }
+
         $allLanguages = \App\Models\Language::getDefaultLanguages();
         foreach ($allLanguages as $lang) {
+            $name = \App\Models\Language::FRIENDLY_NAMES[$lang['extension']] ?? $lang['name'];
             DB::table('languages')->insert([
                 'contest_id' => $contestId,
-                'name' => $lang['name'],
+                'name' => $name,
                 'extension' => $lang['extension'],
                 'compile_command' => $lang['compile_command'],
                 'run_command' => $lang['run_command'],

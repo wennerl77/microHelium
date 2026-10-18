@@ -61,6 +61,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        // mkdir() honours the process umask; the default 022 would turn the
+        // 0775 directories configured for the local disk into 0755.
+        umask(0002);
         // Real engine by default; tests override this binding with
         // Tests\Support\Similarity\FakeSimilarityEngine so the suite never
         // shells out to a real JPlag jar (see docs/specs/42-similarity.md).

@@ -1,7 +1,7 @@
 # MicroHelium Makefile
 # Docker commands for development and production
 
-.PHONY: help setup dev-up dev-up-cf dev-down prod-up prod-up-cf prod-down up-prod build up down restart dev logs shell migrate seed seed-admin seed-questions seed-templates seed-schools seed-full prova-1 backup-db restore-db fresh test lint format deploy rollback smoke composer npm artisan check-buildx dev-tools cloudflare-up cloudflare-down cloudflare-status fix-permissions watch
+.PHONY: help setup dev-up dev-up-cf dev-down prod-up prod-up-cf prod-down up-prod build up down restart dev logs shell migrate seed seed-admin seed-questions seed-templates seed-schools seed-full prova-1 backup-db restore-db fresh test test-frontend lint format deploy rollback smoke composer npm node artisan check-buildx dev-tools cloudflare-up cloudflare-down cloudflare-status fix-permissions watch
 
 # Toolchain profile for compilers (maratona = ~2.1 GB, scripting = ~2.3 GB, funcional = ~4.5 GB, completo = ~9.4 GB)
 JUDGE_PROFILE ?= maratona
@@ -49,6 +49,7 @@ help:
 	@echo "One-Off CLI (Zero-Host):"
 	@echo "  make composer CMD=\"...\"  - Executa comandos do Composer"
 	@echo "  make npm CMD=\"...\"       - Executa comandos do NPM"
+	@echo "  make node CMD=\"...\"      - Executa comandos do Node.js"
 	@echo "  make artisan CMD=\"...\"   - Executa comandos do Artisan"
 	@echo ""
 	@echo "Deploy & Testes:"
@@ -56,6 +57,7 @@ help:
 	@echo "  make rollback PREV=<tag> - Reverte para imagem anterior"
 	@echo "  make smoke       - Executa testes de fumaça pós-deploy"
 	@echo "  make test        - Executa testes PHPUnit"
+	@echo "  make test-frontend - Executa testes frontend com Node.js"
 	@echo ""
 	@echo "Seeders & Carga de Dados:"
 	@echo "  make seed-admin     - Cria o usuário administrador padrão"
@@ -260,6 +262,13 @@ test:
 test-coverage:
 	@docker compose exec app php artisan test --coverage
 
+test-frontend:
+	@if docker compose ps --filter "name=microhelium-node" --filter "status=running" -q | grep -q .; then \
+		docker compose exec node npm run test:frontend; \
+	else \
+		docker compose run --rm -T node npm run test:frontend; \
+	fi
+
 lint:
 	@docker compose exec app ./vendor/bin/pint --test
 
@@ -274,7 +283,18 @@ composer:
 	@docker compose run --rm -T composer $(CMD)
 
 npm:
-	@docker compose run --rm -T node npm $(CMD)
+	@if docker compose ps --filter "name=microhelium-node" --filter "status=running" -q | grep -q .; then \
+		docker compose exec node npm $(CMD); \
+	else \
+		docker compose run --rm -T node npm $(CMD); \
+	fi
+
+node:
+	@if docker compose ps --filter "name=microhelium-node" --filter "status=running" -q | grep -q .; then \
+		docker compose exec node node $(CMD); \
+	else \
+		docker compose run --rm -T node node $(CMD); \
+	fi
 
 artisan:
 	@docker compose run --rm -T artisan $(CMD)
@@ -298,7 +318,8 @@ watch:
 fix-permissions:
 	@echo "Ajustando permissões de storage e bootstrap/cache..."
 	@docker run --rm -v "$(CURDIR):/app" alpine chown -R $$(id -u):$$(id -g) /app/storage /app/bootstrap/cache
-	@chmod -R u+rwX,go+rX storage bootstrap/cache 2>/dev/null || true
+	@chmod -R ug+rwX,o+rX storage bootstrap/cache 2>/dev/null || true
+	@find storage bootstrap/cache -type d -exec chmod g+s {} + 2>/dev/null || true
 	@echo "Permissões corrigidas com sucesso!"
 
 # =============================================================================
@@ -327,6 +348,7 @@ prod: check-buildx
 
 prod-up: check-buildx
 	@rm -f public/hot
+	@$(MAKE) --no-print-directory fix-permissions
 	@if ! docker image inspect microhelium-app:$(IMAGE_TAG) >/dev/null 2>&1 || ! docker image inspect microhelium-judge:$(IMAGE_TAG) >/dev/null 2>&1; then \
 		echo "⚙️  Imagens de produção não encontradas. Construindo no perfil $(JUDGE_PROFILE)..."; \
 		$(MAKE) prod IMAGE_TAG=$(IMAGE_TAG) JUDGE_PROFILE=$(JUDGE_PROFILE); \

@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
+use App\Support\SourceFilename;
+
 /**
  * Creating a Run and handing it to the judge, shared by the competition
  * submit path and issue #43's practice path.
@@ -131,12 +133,91 @@ class RunSubmissionService
      * from the chosen language, not from sniffing the file, so the extension
      * has to be the one that language actually compiles -- see the long note
      * in SubmitController on why $language->extension itself is not it.
+     *
+     * For Java, the filename must match the public class (or the class declaring
+     * the main entry point if none is public) because javac and java enforce this.
      */
-    public function filenameFor(Language $language, ?string $preferredBasename = null): string
+    public function filenameFor(Language $language, ?string $preferredBasename = null, ?string $source = null): string
     {
-        $basename = $this->sanitize(pathinfo((string) $preferredBasename, PATHINFO_FILENAME));
+        $ext = $this->sanitize($language->getFileExtension());
+        $preferredSanitized = $this->sanitize((string) $preferredBasename);
+        $basename = pathinfo($preferredSanitized, PATHINFO_FILENAME);
 
-        return ($basename !== '' ? $basename : 'main').'.'.$this->sanitize($language->getFileExtension());
+        if ($ext === 'java') {
+            $detectedClass = $source !== null ? $this->detectJavaMainClass($source) : null;
+            if ($detectedClass !== null) {
+                $basename = $this->sanitize($detectedClass);
+            } elseif ($basename === '' || strtolower($basename) === 'main') {
+                $basename = 'Main';
+            }
+        } elseif ($basename === '') {
+            $basename = 'main';
+        }
+
+        return $basename . '.' . $ext;
+    }
+
+    /**
+     * Detects the primary entry class name in a Java source file.
+     *
+     * 1. Strips comments and strings to avoid false matches.
+     * 2. Checks for a public class/record (required by JLS to match filename).
+     * 3. If none is public, finds the top-level class enclosing the main method.
+     */
+    public function detectJavaMainClass(string $source): ?string
+    {
+        // 1. Strip comments and string literals to prevent false positives from headers, templates, or logs.
+        $cleaned = preg_replace('!/\*.*?\*/!s', ' ', $source);
+        if ($cleaned !== null) {
+            $cleaned = preg_replace('!//[^\r\n]*!m', ' ', $cleaned);
+        }
+        if ($cleaned !== null) {
+            $cleaned = preg_replace('/"""[\s\S]*?"""|"(?:\\\\.|[^"\\\\])*"/s', '""', $cleaned);
+        }
+        if ($cleaned !== null) {
+            $cleaned = preg_replace("/'(?:\\\\.|[^'\\\\])'/", "''", $cleaned);
+        }
+        $cleaned = $cleaned ?? $source;
+
+        // 2. Search for public class or record (JLS requires filename to match public class)
+        if (preg_match('/\b(?:(?:public|final|sealed|abstract)\s+)*public\s+(?:(?:public|final|sealed|abstract)\s+)*(?:class|record)\s+([A-Za-z0-9_]+)\b/', $cleaned, $matches)) {
+            return $matches[1];
+        }
+
+        // 3. If no public class exists, locate the top-level class containing the main method
+        $pattern = '/(?<open>\{)|(?<close>\})|(?<decl>\b(?:class|record)\s+([A-Za-z0-9_]+)\b)|(?<main>\bvoid\s+main\b)/';
+        if (preg_match_all($pattern, $cleaned, $tokens, PREG_SET_ORDER)) {
+            $depth = 0;
+            $currentTopLevelClass = null;
+            $fallbackClass = null;
+
+            foreach ($tokens as $token) {
+                if (!empty($token['decl'])) {
+                    $className = $token[4];
+                    if ($depth === 0) {
+                        $currentTopLevelClass = $className;
+                        $fallbackClass ??= $className;
+                    }
+                } elseif (!empty($token['open'])) {
+                    $depth++;
+                } elseif (!empty($token['close'])) {
+                    $depth = max(0, $depth - 1);
+                    if ($depth === 0) {
+                        $currentTopLevelClass = null;
+                    }
+                } elseif (!empty($token['main'])) {
+                    if ($currentTopLevelClass !== null) {
+                        return $currentTopLevelClass;
+                    }
+                }
+            }
+
+            if ($fallbackClass !== null) {
+                return $fallbackClass;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -145,10 +226,6 @@ class RunSubmissionService
      */
     public function sanitize(string $name): string
     {
-        $name = basename($name);
-        $name = preg_replace('/[^A-Za-z0-9._-]/', '_', $name);
-        $name = ltrim($name, '.');
-
-        return $name !== '' ? substr($name, 0, 150) : 'source';
+        return SourceFilename::sanitize($name);
     }
 }
