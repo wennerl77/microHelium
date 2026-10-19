@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# microHelium Zero-Host NPM Runner
+# Executa NPM dentro do contêiner Docker isolado (node:22-alpine)
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
+
+TTY_FLAG=""
+if [ ! -t 0 ]; then
+    TTY_FLAG="-T"
+fi
+
+if docker compose ps --filter "name=microhelium-node" --filter "status=running" -q 2>/dev/null | grep -q .; then
+    exec docker compose exec $TTY_FLAG node npm "$@"
+else
+    exec docker compose run --rm $TTY_FLAG node npm "$@"
+fi

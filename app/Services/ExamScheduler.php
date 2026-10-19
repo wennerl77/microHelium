@@ -82,10 +82,7 @@ class ExamScheduler
                 'exam_template_id' => $template->id,
             ]);
 
-            $activeLanguages = collect(\App\Models\Language::getDefaultLanguages())
-                ->filter(fn ($l) => $l['is_active'] ?? false)
-                ->pluck('extension')
-                ->all();
+            $activeLanguages = \App\Models\Language::DEFAULT_CONTEST_LANGUAGES;
             ContestWizardController::provisionContestScaffolding($contest->id, $activeLanguages);
             ContestWizardController::addProblemsFromBank($contest->id, $bankIds, true);
 

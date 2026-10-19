@@ -18,7 +18,6 @@ apk:ldc
 apk:lua5.4
 apk:ncurses-libs
 apk:nim
-apk:nodejs
 apk:npm
 apk:ocaml
 apk:openjdk17-jdk

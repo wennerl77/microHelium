@@ -89,6 +89,12 @@ class ExamScheduleController extends Controller
             );
         } catch (\InvalidArgumentException $e) {
             return back()->withInput()->withErrors(['school_ids' => $e->getMessage()]);
+        } catch (\League\Flysystem\FilesystemException $e) {
+            report($e);
+
+            return back()->withInput()->withErrors([
+                'template_id' => 'Não foi possível gravar os arquivos da prova no armazenamento (verifique as permissões de storage/app). Nada foi criado.',
+            ]);
         }
 
         // Activation links are shown once: only their hash is stored.

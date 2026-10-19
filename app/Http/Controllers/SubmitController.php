@@ -31,8 +31,19 @@ class SubmitController extends Controller
 
         $languages = Language::where('contest_id', $problem->contest_id)
             ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
+            ->get()
+            ->sortBy(function ($lang) {
+                $order = [
+                    'c_gcc13' => 1, 'c' => 1,
+                    'cpp_gpp13' => 2, 'cpp' => 2,
+                    'java21' => 3, 'java' => 3,
+                    'py3' => 4, 'py' => 4,
+                    'js_node24' => 5, 'js' => 5,
+                ];
+
+                return $order[$lang->extension] ?? 99;
+            })
+            ->values();
 
         return view('exercises.submit', [
             'problem' => $problem,
@@ -105,13 +116,11 @@ class SubmitController extends Controller
             // usable file extension, and passing that straight to gcc/javac
             // makes every wizard-created contest's submissions fail to
             // compile. The basename is preserved since some languages (Java)
-            // require it to match the program's class/entry-point name.
-            $basename = pathinfo(SourceFilename::sanitize($file->getClientOriginalName()), PATHINFO_FILENAME);
-            $originalName = ($basename !== '' ? $basename : 'main').'.'.SourceFilename::sanitize($language->getFileExtension());
             $sourceContent = file_get_contents($file->path());
+            $originalName = $this->submissions->filenameFor($language, $file->getClientOriginalName(), $sourceContent);
         } else {
-            $originalName = 'main.'.SourceFilename::sanitize($language->getFileExtension());
-            $sourceContent = $request->input('code_text');
+            $sourceContent = (string) $request->input('code_text');
+            $originalName = $this->submissions->filenameFor($language, 'main', $sourceContent);
         }
 
         $siteId = $user->site_id ?? $contest->sites()->value('id');

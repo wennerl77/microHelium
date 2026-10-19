@@ -80,8 +80,8 @@ final class ToolchainProfile
         $profiles = [
             new self(
                 'maratona',
-                'as cinco da prova tipica da Maratona SBC -- o caso que a #306 usa para medir o desperdicio',
-                ['c_gcc13', 'cpp_gpp13', 'java21', 'py3', 'kt'],
+                'as linguagens da maratona com JavaScript (C, C++, Java, Python, Kotlin e JavaScript)',
+                ['c_gcc13', 'cpp_gpp13', 'java21', 'py3', 'kt', 'js_node24'],
                 // `c99_gcc`/`cpp14_gpp`/`cpp17_gpp` sao o mesmo `gcc`/`g++`
                 // com outro `-std`: ja estao instalados, e recusa-los exigiria
                 // apagar entradas do catalogo, nao pacotes da imagem.

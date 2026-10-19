@@ -4,6 +4,7 @@
 
 @php
     $availableLanguages = \App\Models\Language::getDefaultLanguages();
+    $defaultContestLangs = \App\Models\Language::DEFAULT_CONTEST_LANGUAGES;
     // $problemBank is passed from the route
     $problemBank = $problemBank ?? collect([]);
 @endphp
@@ -141,19 +142,24 @@
                 <div class="p-6">
                     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                         @foreach($availableLanguages as $lang)
-                        <label class="language-card flex items-center gap-3 p-3 bg-background border-2 rounded-lg cursor-pointer hover:border-primary/50 transition-colors {{ $lang['is_active'] ? 'selected' : '' }}" data-lang="{{ $lang['extension'] }}">
-                            <input type="checkbox" name="languages[]" value="{{ $lang['extension'] }}" class="sr-only" @checked(session()->hasOldInput('languages') ? in_array($lang['extension'], old('languages', [])) : $lang['is_active'])>
+                        @php
+                            $isSelected = session()->hasOldInput('languages')
+                                ? in_array($lang['extension'], old('languages', []))
+                                : in_array($lang['extension'], $defaultContestLangs);
+                        @endphp
+                        <label class="language-card flex items-center gap-3 p-3 bg-background border-2 rounded-lg cursor-pointer hover:border-primary/50 transition-colors {{ $isSelected ? 'selected' : '' }}" data-lang="{{ $lang['extension'] }}">
+                            <input type="checkbox" name="languages[]" value="{{ $lang['extension'] }}" class="sr-only" @checked($isSelected)>
                             <span class="w-8 h-8 bg-primary-soft rounded flex items-center justify-center flex-shrink-0">
                                 <span class="text-xs font-bold text-primary">.{{ $lang['file_ext'] ?? $lang['extension'] }}</span>
                             </span>
-                            <span class="font-medium text-foreground text-sm truncate flex-1">{{ $lang['name'] }}</span>
+                            <span class="font-medium text-foreground text-sm truncate flex-1">{{ \App\Models\Language::FRIENDLY_NAMES[$lang['extension']] ?? $lang['name'] }}</span>
                             <svg aria-hidden="true" class="check-icon h-5 w-5 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
                         </label>
                         @endforeach
                     </div>
-                    <p class="text-sm text-muted-foreground mt-4"><span id="selectedLangCount">{{ collect($availableLanguages)->where('is_active', true)->count() }}</span> linguagem(ns) selecionada(s)</p>
+                    <p class="text-sm text-muted-foreground mt-4"><span id="selectedLangCount">{{ count($defaultContestLangs) }}</span> linguagem(ns) selecionada(s)</p>
                 </div>
             </div>
         </div>
