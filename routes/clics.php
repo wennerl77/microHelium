@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Route;
  * Quem se autentica com Sanctum e e da banca recebe a versao descongelada
  * pelo mesmo URL, que e o que um shadow da propria organizacao precisa.
  */
-Route::prefix('api/clics')->group(function () {
+Route::prefix('api/clics')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [ContestApiController::class, 'index']);
     Route::get('/access', [ContestApiController::class, 'access']);
     Route::get('/contests', [ContestApiController::class, 'contests']);

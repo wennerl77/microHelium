@@ -5,6 +5,6 @@
 <form method="POST" action="{{ route('locale.update') }}" class="flex items-center gap-1" role="group" aria-label="{{ __('Idioma') }}">
     @csrf
     @foreach(\App\Support\InterfaceLocale::supported() as $localeCode => $localeName)
-        <button type="submit" name="locale" value="{{ $localeCode }}" lang="{{ \App\Support\InterfaceLocale::htmlLang($localeCode) }}" aria-pressed="{{ app()->getLocale() === $localeCode ? 'true' : 'false' }}" class="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground aria-pressed:bg-accent aria-pressed:text-foreground transition-colors">{{ $localeName }}</button>
+        <button type="submit" name="locale" value="{{ $localeCode }}" lang="{{ \App\Support\InterfaceLocale::htmlLang($localeCode) }}" aria-pressed="{{ app()->getLocale() === $localeCode ? 'true' : 'false' }}" class="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground aria-pressed:bg-accent aria-pressed:text-accent-foreground transition-colors">{{ $localeName }}</button>
     @endforeach
 </form>

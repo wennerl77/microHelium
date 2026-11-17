@@ -148,4 +148,16 @@ class SecurityHeadersTest extends TestCase
             'CSP should not be sent on 500 server errors in local debug mode to allow error screen rendering'
         );
     }
+
+    public function test_csp_includes_configured_vite_port_in_local_debug_mode(): void
+    {
+        config(['app.debug' => true, 'app.vite_port' => 5174]);
+        $this->app->detectEnvironment(fn () => 'local');
+
+        $csp = $this->get('/login')->assertOk()->headers->get('Content-Security-Policy');
+
+        $this->assertNotNull($csp);
+        $this->assertStringContainsString('http://localhost:5174', $csp);
+        $this->assertStringContainsString('ws://localhost:5174', $csp);
+    }
 }

@@ -215,19 +215,19 @@ Route::middleware('auth:sanctum')->group(function () {
         // juiz julga a prova que lhe deram, nao decide quando o resultado
         // vira publico.
         Route::post('/contests/{contest}/unfreeze', [ContestController::class, 'unfreeze']);
+
+        // OpenAPI spec (see docs/api/openapi.yaml -- issue #52)
+        Route::get('/openapi.yaml', function () {
+            return response(file_get_contents(base_path('docs/api/openapi.yaml')), 200, [
+                'Content-Type' => 'application/yaml',
+            ]);
+        });
     });
 });
 
 // Health check
 Route::get('/health', function () {
     return response()->json(['status' => 'ok']);
-});
-
-// OpenAPI spec (see docs/api/openapi.yaml -- issue #52)
-Route::get('/openapi.yaml', function () {
-    return response(file_get_contents(base_path('docs/api/openapi.yaml')), 200, [
-        'Content-Type' => 'application/yaml',
-    ]);
 });
 
 // Current active contest for timer.
@@ -312,4 +312,4 @@ Route::get('/contest/current', function () {
     // e o contrario -- o consumidor e o <contest-timer> de uma pagina Blade,
     // que chega com cookie e sem token. GET, entao o VerifyCsrfToken do
     // grupo nao entra no caminho.
-    ->middleware('web');
+    ->middleware(['web', 'auth']);

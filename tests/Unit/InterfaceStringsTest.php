@@ -59,6 +59,7 @@ class InterfaceStringsTest extends TestCase
     /** Vue e JS da area, ja migrados. */
     private const SCRIPTS = [
         'resources/js/components/ContestTimer.vue',
+        'resources/js/components/PatoStage.vue',
         'resources/js/components/ThemeToggle.vue',
         'resources/js/app.js',
     ];

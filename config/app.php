@@ -36,6 +36,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Vite Dev Server Host Port
+    |--------------------------------------------------------------------------
+    */
+
+    'vite_port' => (int) env('VITE_PORT', 5173),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Trusted Proxies
+    |--------------------------------------------------------------------------
+    |
+    | Comma-separated list of proxy IPs/CIDRs (or '*' when behind a reverse
+    | proxy that strips/overwrites X-Forwarded-For). Empty by default so
+    | untrusted clients cannot spoof X-Forwarded-For to bypass IP locks or
+    | rate limits.
+    |
+    */
+
+    'trusted_proxies' => env('TRUSTED_PROXIES'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Código-fonte desta instalação
     |--------------------------------------------------------------------------
     |

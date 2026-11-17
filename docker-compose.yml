@@ -304,7 +304,7 @@ services:
     container_name: microhelium-mailpit
     restart: unless-stopped
     ports:
-      - "${MAIL_PORT:-1025}:1025"
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
       - "${MAILPIT_UI_PORT:-8025}:8025"
     networks:
       - microhelium

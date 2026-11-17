@@ -82,6 +82,22 @@ class ApiRouteAuthorizationTest extends TestCase
         'POST api/runs',
         'GET api/runs/{run}',
         'GET api/runs/{run}/source',
+        'GET api/clics',
+        'GET api/clics/access',
+        'GET api/clics/contests',
+        'GET api/clics/contests/{contest}',
+        'GET api/clics/contests/{contest}/state',
+        'GET api/clics/contests/{contest}/problems',
+        'GET api/clics/contests/{contest}/teams',
+        'GET api/clics/contests/{contest}/organizations',
+        'GET api/clics/contests/{contest}/groups',
+        'GET api/clics/contests/{contest}/languages',
+        'GET api/clics/contests/{contest}/judgement-types',
+        'GET api/clics/contests/{contest}/submissions',
+        'GET api/clics/contests/{contest}/judgements',
+        'GET api/clics/contests/{contest}/scoreboard',
+        'GET api/clics/contests/{contest}/awards',
+        'GET api/clics/contests/{contest}/event-feed',
     ];
 
     /**
@@ -110,6 +126,9 @@ class ApiRouteAuthorizationTest extends TestCase
         'GET api/tokens',
         'DELETE api/tokens/current',
         'DELETE api/tokens/{token}',
+        'GET api/clics',
+        'GET api/clics/access',
+        'GET api/clics/contests',
     ];
 
     private const TEAM_WRITES = [
@@ -136,6 +155,7 @@ class ApiRouteAuthorizationTest extends TestCase
         // Issue #189: revelar o placar final e a cerimonia -- fica com o
         // admin, junto do resto do ciclo de vida do evento.
         'POST api/contests/{contest}/unfreeze',
+        'GET api/openapi.yaml',
         'GET api/contests/{contest}/scoreboard/export',
         'GET api/contests/{contest}/statistics',
         // Issue #192 -- rejulgamento em lote. Muda o veredito de envios de

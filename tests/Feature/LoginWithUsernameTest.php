@@ -82,7 +82,7 @@ class LoginWithUsernameTest extends TestCase
         $response->assertSessionHasErrors('email');
     }
 
-    public function test_user_is_automatically_enabled_and_logged_in_when_contest_has_started(): void
+    public function test_disabled_user_remains_blocked_even_after_contest_has_started(): void
     {
         $pastTime = now()->subMinutes(10);
 
@@ -96,19 +96,19 @@ class LoginWithUsernameTest extends TestCase
             'email' => null,
             'password' => Hash::make('secret123'),
             'contest_id' => $contest->id,
-            'is_enabled' => false, // Nasceu desabilitado!
+            'is_enabled' => false,
         ]);
 
-        $response = $this->post('/login', [
+        $response = $this->from('/login')->post('/login', [
             'email' => 'team-now',
             'password' => 'secret123',
         ]);
 
-        $response->assertRedirect('/home');
-        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $response->assertSessionHasErrors('email');
 
-        // Deve ter auto-habilitado no banco
-        $this->assertTrue($user->fresh()->is_enabled);
+        $this->assertFalse((bool) $user->fresh()->is_enabled);
     }
 
     public function test_multi_contest_isolation_user_a_enters_user_b_is_blocked(): void
@@ -132,7 +132,7 @@ class LoginWithUsernameTest extends TestCase
             'email' => null,
             'password' => Hash::make('pass-a'),
             'contest_id' => $contestA->id,
-            'is_enabled' => false,
+            'is_enabled' => true,
         ]);
 
         $userB = $this->createTestUser([
@@ -143,7 +143,7 @@ class LoginWithUsernameTest extends TestCase
             'is_enabled' => false,
         ]);
 
-        // User A tenta logar: deve conseguir porque Contest A já iniciou
+        // User A tenta logar: deve conseguir porque está habilitado
         $responseA = $this->post('/login', [
             'email' => 'team-contest-a',
             'password' => 'pass-a',
@@ -155,7 +155,7 @@ class LoginWithUsernameTest extends TestCase
         $this->post('/logout');
         $this->assertGuest();
 
-        // User B tenta logar: deve ser bloqueado porque Contest B só inicia amanhã
+        // User B tenta logar: deve ser bloqueado porque está desabilitado
         $responseB = $this->from('/login')->post('/login', [
             'email' => 'team-contest-b',
             'password' => 'pass-b',

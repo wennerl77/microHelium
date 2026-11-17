@@ -96,8 +96,13 @@ class OpenApiSpecTest extends TestCase
         );
     }
 
-    public function test_openapi_yaml_route_serves_the_spec_file()
+    public function test_openapi_yaml_route_requires_admin_and_serves_the_spec_file()
     {
+        $this->getJson('/api/openapi.yaml')->assertUnauthorized();
+
+        $admin = \Helium\User::factory()->create(['user_type' => 'admin']);
+        \Laravel\Sanctum\Sanctum::actingAs($admin);
+
         $response = $this->get('/api/openapi.yaml');
 
         $response->assertOk();

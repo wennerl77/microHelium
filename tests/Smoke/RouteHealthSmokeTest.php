@@ -31,16 +31,25 @@ class RouteHealthSmokeTest extends TestCase
     public static function guestAccessibleRoutes(): array
     {
         return [
-            'home page' => ['/'],
             'login' => ['/login'],
-            'register' => ['/register'],
-            'password reset' => ['/password/reset'],
             'health check' => ['/up'],
-            'problems list' => ['/exercises'],
-            'scoreboard' => ['/scoreboard'],
-            'help' => ['/ajuda'],
-            'wizard landing' => ['/wizard'],
         ];
+    }
+
+    public function test_guest_root_redirects_to_login(): void
+    {
+        $this->get('/')->assertRedirect('/login');
+    }
+
+    public function test_guest_register_is_closed_by_default(): void
+    {
+        $this->get('/register')->assertStatus(404);
+    }
+
+    public function test_password_reset_stub_routes_are_removed(): void
+    {
+        $this->get('/password/reset')->assertStatus(404);
+        $this->post('/password/email')->assertStatus(404);
     }
 
     #[DataProvider('authOnlyRoutes')]
@@ -55,6 +64,10 @@ class RouteHealthSmokeTest extends TestCase
     {
         return [
             'dashboard' => ['/home'],
+            'problems list' => ['/exercises'],
+            'scoreboard' => ['/scoreboard'],
+            'help' => ['/ajuda'],
+            'wizard landing' => ['/wizard'],
             'submissions' => ['/submissions'],
             // Issue #135: reading the jury's clarification answers is contest
             // information for registered teams, not public.

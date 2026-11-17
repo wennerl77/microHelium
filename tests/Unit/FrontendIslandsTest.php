@@ -103,7 +103,7 @@ class FrontendIslandsTest extends TestCase
         $ilhas = $this->islands();
 
         foreach ($this->views() as $view) {
-            preg_match_all('/<(contest-timer|theme-toggle|scoreboard|run-list|submit-form|clarification-list)\b/', $view, $m);
+            preg_match_all('/<(contest-timer|pato-stage|theme-toggle|scoreboard|run-list|submit-form|clarification-list)\b/', $view, $m);
 
             foreach (array_unique($m[1]) as $usada) {
                 $this->assertContains($usada, $ilhas, "A view usa <{$usada}> e resources/js/app.js não registra essa ilha.");

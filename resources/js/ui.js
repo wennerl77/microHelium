@@ -7,6 +7,17 @@ import { initializeStatusFilters } from './ui/status-filters.js';
 
 // Blade owns the document; Vue owns only its component islands.
 export function initializeUI() {
+    const updateReadingProgress = () => {
+        const doc = document.documentElement;
+        const max = doc.scrollHeight - window.innerHeight;
+        const progress = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+        doc.style.setProperty('--reading-progress', progress.toFixed(4));
+    };
+    if (document.querySelector('.reading-progress')) {
+        updateReadingProgress();
+        window.addEventListener('scroll', updateReadingProgress, { passive: true });
+        window.addEventListener('resize', updateReadingProgress, { passive: true });
+    }
     const sidebar = document.getElementById('sidebar');
     const toggle = document.getElementById('sidebar-toggle');
     const backdrop = document.getElementById('sidebar-backdrop');

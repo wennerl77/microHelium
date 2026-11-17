@@ -2,9 +2,9 @@
     <div class="space-y-1">
         <span v-if="loading" class="text-sm text-muted-foreground" role="status">{{ t('Carregando competição…') }}</span>
         <template v-else-if="hasContest">
-            <span class="block text-xs font-medium" :class="timerClass">{{ statusLabel }}</span>
-            <span role="timer" :aria-label="statusLabel" class="block text-2xl font-mono font-semibold tracking-tight tabular-nums" :class="timerClass">{{ formattedTime }}</span>
-            <span v-if="frozen && !upcoming" class="text-xs text-warning">{{ t('Placar congelado') }}</span>
+            <span class="block text-xs font-mono uppercase tracking-wider font-semibold" :class="timerClass">{{ statusLabel }}</span>
+            <span role="timer" :aria-label="statusLabel" class="block text-2xl font-mono font-bold tracking-tight tabular-nums" :class="timerClass">{{ formattedTime }}</span>
+            <span v-if="frozen && !upcoming" class="inline-block rounded px-2 py-0.5 text-xs font-mono font-semibold bg-warning-soft text-warning">{{ t('Placar congelado') }}</span>
         </template>
         <span v-if="failed" class="text-sm text-muted-foreground">{{ t('Estado indisponível. Confirme antes de agir.') }} <button type="button" @click="fetchContestData" class="text-primary underline">{{ t('Tentar novamente') }}</button></span>
         <span v-else-if="!loading && !hasContest" class="text-sm text-muted-foreground">{{ t('Sem competição ativa') }}</span>

@@ -198,7 +198,7 @@
                                 id="btn-regenerate-sample"
                                 @click="refreshSample"
                                 class="button-secondary text-[11px] py-0.5 px-2 flex items-center gap-1">
-                            <span>🔄</span>
+                            <span><RefreshCw aria-hidden="true" class="h-3.5 w-3.5" /></span>
                             <span>Regerar</span>
                         </button>
                     </div>
@@ -241,6 +241,7 @@
 </template>
 
 <script setup>
+import { RefreshCw } from '@lucide/vue';
 import { reactive, ref, computed } from 'vue';
 
 const emit = defineEmits(['apply', 'close']);

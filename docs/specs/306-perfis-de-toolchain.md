@@ -37,7 +37,7 @@ php artisan judge:toolchain-profile <perfil> --apk \
 | Perfil | Homologadas | Roda | Pacotes `apk` | Instalado | Acima da base |
 |---|---:|---:|---:|---:|---:|
 | (imagem base, `php:8.3-cli-alpine`) | — | — | 40 | 21,3 MiB | — |
-| `maratona` | 5 | 11 | 7 | **582,6 MiB** | +561 MiB |
+| `maratona` | 5 | 11 | 8 | **582,6 MiB** | +561 MiB |
 | `scripting` | 12 | 17 | 13 | 710,6 MiB | +689 MiB |
 | `funcional` | 20 | 25 | 20 | 2630,7 MiB | +2609 MiB |
 | `completo` | 51 | 51 | 40 | **5799,4 MiB** | +5778 MiB |

@@ -1,0 +1,1 @@
+import{F as e,T as t,v as n}from"./app-CEvnHGfg.js";var r=[`hidden`,`id`],i={__name:`FieldError`,props:{error:Object,name:String},setup(i){return(a,o)=>(t(),n(`p`,{hidden:!i.error?.errors?.[i.name],id:`${i.name}-error`,class:`field-error`},e(i.error?.errors?.[i.name]?.join(` `)),9,r))}};export{i as t};

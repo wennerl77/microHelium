@@ -194,4 +194,27 @@ class LoginSiteIpLockTest extends TestCase
             'remember-me should still work when the site has no IP restriction'
         );
     }
+
+    public function test_x_forwarded_for_spoofing_does_not_bypass_site_ip_lock()
+    {
+        $contest = Contest::factory()->create();
+        $site = Site::factory()->create(['contest_id' => $contest->id, 'ip_address' => '203.0.113.5']);
+        $this->createTestUser([
+            'email' => 'team@example.com',
+            'password' => Hash::make('password123'),
+            'site_id' => $site->id,
+        ]);
+
+        $response = $this->from('/login')->post('/login', [
+            'email' => 'team@example.com',
+            'password' => 'password123',
+        ], [
+            'REMOTE_ADDR' => '198.51.100.99',
+            'HTTP_X_FORWARDED_FOR' => '203.0.113.5',
+        ]);
+
+        $response->assertRedirect('/login');
+        $response->assertSessionHasErrors('email');
+        $this->assertGuest();
+    }
 }

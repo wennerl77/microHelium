@@ -204,7 +204,6 @@
     "Penalidade:": "Penalización:",
     "Tempo total + penalidades por erros": "Tiempo total + penalizaciones por errores",
     "MicroHelium — início": "MicroHelium — inicio",
-    "COMPETITIVE PROGRAMMING": "PROGRAMACIÓN COMPETITIVA",
     "Revise os campos para continuar": "Revisa los campos para continuar",
     "Não foi possível concluir. Corrija os campos indicados e tente novamente.": "No se pudo completar. Corrige los campos indicados e inténtalo de nuevo.",
     "Buscar :what": "Buscar :what",
@@ -394,5 +393,8 @@
     "Meus dados": "Mis datos",
     "Baixe, em JSON, os dados da sua conta, as suas submissões com o código-fonte, os seus esclarecimentos, pedidos de impressão e chamados.": "Descarga, en JSON, los datos de tu cuenta, tus envíos con el código fuente, tus aclaraciones, solicitudes de impresión y llamados.",
     "Baixar meus dados": "Descargar mis datos",
-    "Perfil atualizado com sucesso!": "¡Perfil actualizado con éxito!"
+    "Perfil atualizado com sucesso!": "¡Perfil actualizado con éxito!",
+    "MARATONA TURING 2026": "MARATÓN TURING 2026",
+    "CLASSIFICAÇÃO PRINCIPAL": "CLASIFICACIÓN PRINCIPAL",
+    "Pódio da Competição": "Podio de la Competencia"
 }

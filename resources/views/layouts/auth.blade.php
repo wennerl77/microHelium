@@ -10,19 +10,35 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
+<div class="reading-progress" aria-hidden="true"></div>
 <a href="#main-content" class="skip-link">{{ __('Pular para o conteúdo') }}</a>
 <div id="app" class="auth-shell">
     <aside class="auth-story">
         @include('partials.brand')
-        <div class="auth-story-copy"><span class="eyebrow">{{ __('IDEIAS. CÓDIGO. CONQUISTAS.') }}</span>
+        <div class="auth-story-copy">
+            <div class="flex items-center gap-4 mb-4">
+                <img src="/img/pato.svg" alt="" aria-hidden="true" width="64" height="64" class="shrink-0" />
+                <span class="eyebrow">{{ __('IDEIAS. CÓDIGO. CONQUISTAS.') }}</span>
+            </div>
             <h2>{!! __('Seu próximo<br>desafio começa<br><em>aqui.</em>') !!}</h2>
             <p>{{ __('Um espaço para resolver problemas, evoluir com seu time e transformar conhecimento em soluções.') }}</p>
-            <div class="code-window" aria-hidden="true"><span class="code-window-label" translate="no">solution.cpp</span><code><span>// {{ __('uma ideia de cada vez') }}</span><br><span translate="no">while (challenge) {<br>&nbsp;&nbsp;learn();<br>&nbsp;&nbsp;build();<br>&nbsp;&nbsp;try_again();<br>}</span></code><span class="code-result">✓ {{ __('Pronto para o próximo desafio') }}</span></div>
+            <div class="code-window" aria-hidden="true">
+                <span class="code-window-label" translate="no">solution.cpp</span>
+                <code>
+                    <span class="syn-cm">// {{ __('uma ideia de cada vez') }}</span><br>
+                    <span class="syn-kw" translate="no">while</span> <span translate="no">(</span><span class="syn-ty" translate="no">bool</span> <span translate="no">challenge =</span> <span class="syn-val" translate="no">true</span><span translate="no">) {</span><br>
+                    <span translate="no">&nbsp;&nbsp;learn();</span><br>
+                    <span translate="no">&nbsp;&nbsp;build();</span><br>
+                    <span translate="no">&nbsp;&nbsp;try_again();</span><br>
+                    <span translate="no">}</span>
+                </code>
+                <span class="code-result">✓ {{ __('Pronto para o próximo desafio') }}</span>
+            </div>
         </div>
         <p class="text-sm">MicroHelium · {{ __('Competições de programação') }}</p>
     </aside>
     <main id="main-content" tabindex="-1" class="auth-main">
-        <div class="auth-topbar"><a href="/" class="text-sm text-muted-foreground hover:text-primary">← {{ __('Voltar ao início') }}</a><div class="flex items-center gap-2">@include('partials.locale-switcher')<theme-toggle></theme-toggle></div></div>
+        <div class="auth-topbar"><div class="flex items-center gap-2 ml-auto">@include('partials.locale-switcher')<theme-toggle></theme-toggle></div></div>
         <div class="auth-form">
             <p class="eyebrow mb-3">{{ __('BEM-VINDO À ARENA') }}</p>
             <h1>@yield('auth-title', 'MicroHelium')</h1>

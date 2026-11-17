@@ -81,7 +81,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border gap-3">
                 <div class="flex items-center gap-3">
                     <span class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold flex items-center justify-center text-sm">
-                        ✏️
+                        <Pencil aria-hidden="true" class="h-4 w-4" />
                     </span>
                     <div>
                         <div class="flex items-center gap-2">
@@ -112,7 +112,7 @@
             <!-- Empty State Rascunhos -->
             <div v-else-if="drafts.length === 0" class="p-8 text-center border border-dashed rounded-xl space-y-3 bg-muted/10">
                 <div class="w-12 h-12 rounded-xl bg-muted/40 flex items-center justify-center mx-auto text-muted-foreground text-xl">
-                    📝
+                    <FileText aria-hidden="true" class="h-6 w-6" />
                 </div>
                 <div>
                     <h3 class="text-sm font-semibold text-foreground">Nenhum rascunho em andamento</h3>
@@ -192,14 +192,14 @@
                             <span v-if="item.contest"
                                   class="inline-flex items-center gap-1 text-2xs text-primary bg-primary/10 px-2 py-0.5 rounded-md font-medium truncate max-w-[150px]"
                                   :title="item.contest.name">
-                                🏆 {{ item.contest.name }}
+                                <Trophy aria-hidden="true" class="h-3 w-3 shrink-0" /> {{ item.contest.name }}
                             </span>
                             <span v-else
                                   class="inline-flex items-center gap-1 text-2xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-medium">
-                                🏛️ Banco Geral
+                                <Landmark aria-hidden="true" class="h-3 w-3 shrink-0" /> Banco Geral
                             </span>
                             <span class="inline-flex items-center gap-1 text-2xs text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md font-mono">
-                                ⏱️ {{ item.time_limit }}s · 💾 {{ item.memory_limit }}MB
+                                <Clock aria-hidden="true" class="h-3 w-3 shrink-0" /> {{ item.time_limit }}s · <HardDrive aria-hidden="true" class="h-3 w-3 shrink-0" /> {{ item.memory_limit }}MB
                             </span>
                         </div>
 
@@ -244,7 +244,7 @@
             <!-- Empty State Publicados -->
             <div v-else-if="published.length === 0" class="p-8 text-center border border-dashed rounded-xl space-y-2 bg-muted/10">
                 <div class="w-12 h-12 rounded-xl bg-muted/40 flex items-center justify-center mx-auto text-muted-foreground text-xl">
-                    📦
+                    <Package aria-hidden="true" class="h-6 w-6" />
                 </div>
                 <h3 class="text-sm font-semibold text-foreground">Nenhum exercício publicado ainda</h3>
                 <p class="text-xs text-muted-foreground max-w-sm mx-auto">
@@ -294,14 +294,14 @@
                             <span v-if="item.contest"
                                   class="inline-flex items-center gap-1 text-2xs text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 rounded-md font-medium truncate max-w-[150px]"
                                   :title="item.contest.name">
-                                🏆 {{ item.contest.name }}
+                                <Trophy aria-hidden="true" class="h-3 w-3 shrink-0" /> {{ item.contest.name }}
                             </span>
                             <span v-else
                                   class="inline-flex items-center gap-1 text-2xs text-blue-800 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-md font-medium">
-                                🏛️ Banco Geral ({{ item.published_bank_code || item.basename }})
+                                <Landmark aria-hidden="true" class="h-3 w-3 shrink-0" /> Banco Geral ({{ item.published_bank_code || item.basename }})
                             </span>
                             <span class="inline-flex items-center gap-1 text-2xs text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md font-mono">
-                                ⏱️ {{ item.time_limit }}s · 💾 {{ item.memory_limit }}MB
+                                <Clock aria-hidden="true" class="h-3 w-3 shrink-0" /> {{ item.time_limit }}s · <HardDrive aria-hidden="true" class="h-3 w-3 shrink-0" /> {{ item.memory_limit }}MB
                             </span>
                         </div>
 
@@ -391,7 +391,7 @@
                                 class="w-full px-3 py-2 text-sm border rounded-lg bg-background text-foreground border-input focus:ring-2 focus:ring-ring focus:outline-none">
                             <option value="">(Nenhuma - Salvar apenas no Banco de Problemas Geral)</option>
                             <option v-for="c in contests" :key="c.id" :value="String(c.id)">
-                                🏆 {{ c.name }}
+                                {{ c.name }}
                             </option>
                         </select>
                     </div>
@@ -471,7 +471,7 @@
             <div class="surface max-w-md w-full rounded-2xl p-6 shadow-2xl border space-y-4">
                 <div class="flex items-center gap-3 text-destructive">
                     <span class="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center text-lg font-bold">
-                        ⚠️
+                        <AlertTriangle aria-hidden="true" class="h-5 w-5" />
                     </span>
                     <div>
                         <h3 id="delete-title" class="font-bold text-foreground">Excluir Exercício?</h3>
@@ -500,6 +500,7 @@
 </template>
 
 <script setup>
+import { AlertTriangle, Clock, FileText, HardDrive, Landmark, Package, Pencil, Trophy } from '@lucide/vue';
 import { ref, reactive, computed, onMounted, nextTick } from 'vue';
 
 // Template base C++ com testlib.h

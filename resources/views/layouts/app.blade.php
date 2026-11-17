@@ -13,6 +13,7 @@
     @include('partials.i18n-catalog')
 </head>
 <body class="h-full bg-background text-foreground antialiased">
+    <div class="reading-progress" aria-hidden="true"></div>
     <a href="#main-content" class="skip-link">{{ __('Pular para o conteúdo') }}</a>
     <div id="app" class="min-h-full">
         <div class="flex min-h-screen">
@@ -294,7 +295,7 @@
             <!-- Main content -->
             <div id="app-content" class="app-content flex-1 flex flex-col min-w-0 lg:ml-0">
                 <!-- Top navbar -->
-                <header class="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6">
+                <header id="site-header" class="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background/95 backdrop-blur-md px-4 sm:px-6">
                     <!-- Mobile menu button -->
                     <button
                         type="button"
@@ -387,10 +388,10 @@
                 <footer class="border-t border-border py-4 px-4 sm:px-6">
                     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
                         <nav class="flex flex-wrap justify-center gap-4">
-                            <a href="{{ Auth::check() ? '/home' : '/' }}" class="hover:text-foreground transition-colors">{{ __('Início') }}</a>
-                            <a href="/exercises" class="hover:text-foreground transition-colors">{{ __('Problemas') }}</a>
-                            <a href="/scoreboard" class="hover:text-foreground transition-colors">{{ __('Placar') }}</a>
-                            <a href="/ajuda" class="hover:text-foreground transition-colors">{{ __('Ajuda') }}</a>
+                            <a href="{{ Auth::check() ? '/home' : '/' }}" class="turing-nav-link hover:text-foreground transition-colors">{{ __('Início') }}</a>
+                            <a href="/exercises" class="turing-nav-link hover:text-foreground transition-colors">{{ __('Problemas') }}</a>
+                            <a href="/scoreboard" class="turing-nav-link hover:text-foreground transition-colors">{{ __('Placar') }}</a>
+                            <a href="/ajuda" class="turing-nav-link hover:text-foreground transition-colors">{{ __('Ajuda') }}</a>
                         </nav>
                         <p>
                             &copy; {{ date('Y') }} <a href="{{ config('app.source_url') }}" class="hover:text-foreground transition-colors">MicroHelium</a> -

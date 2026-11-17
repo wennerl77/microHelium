@@ -227,7 +227,7 @@
                                 class="w-full px-3 py-2 text-sm border rounded-lg bg-background text-foreground border-input focus:ring-2 focus:ring-ring focus:outline-none">
                             <option value="">(Nenhuma - Banco Geral)</option>
                             <option v-for="c in availableContests" :key="c.id" :value="String(c.id)">
-                                🏆 {{ c.name }}
+                                {{ c.name }}
                             </option>
                         </select>
                     </div>
@@ -700,7 +700,7 @@
                     <!-- Warnings if any -->
                     <div v-if="calibrationResults.summary.warnings && calibrationResults.summary.warnings.length > 0" class="space-y-2">
                         <div v-for="(warn, i) in calibrationResults.summary.warnings" :key="i" class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs flex items-center gap-2">
-                            <span>⚠️</span>
+                            <AlertTriangle aria-hidden="true" class="h-4 w-4 shrink-0" />
                             <span>{{ warn }}</span>
                         </div>
                     </div>
@@ -957,9 +957,9 @@
                 <div class="surface p-5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Destino Final</span>
-                        <div class="text-sm font-bold text-foreground mt-0.5">
-                            <span v-if="exercise.contest_id">🏆 Competição ID #{{ exercise.contest_id }}</span>
-                            <span v-else>🏛️ Banco Geral de Problemas</span>
+                        <div class="text-sm font-bold text-foreground mt-0.5 flex items-center gap-1.5">
+                            <span v-if="exercise.contest_id" class="inline-flex items-center gap-1.5"><Trophy aria-hidden="true" class="h-4 w-4 text-primary" /> Competição ID #{{ exercise.contest_id }}</span>
+                            <span v-else class="inline-flex items-center gap-1.5"><Landmark aria-hidden="true" class="h-4 w-4 text-primary" /> Banco Geral de Problemas</span>
                         </div>
                         <p class="text-xs text-muted-foreground mt-0.5">
                             Ao publicar, o pacote completo de testes e limites derivados serão integrados atomicamente.
@@ -1055,6 +1055,7 @@
 </template>
 
 <script setup>
+import { AlertTriangle, Landmark, Trophy } from '@lucide/vue';
 import { ref, reactive, computed, onMounted } from 'vue';
 import PolygonGeneratorBuilder from '../components/PolygonGeneratorBuilder.vue';
 

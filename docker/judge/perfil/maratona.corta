@@ -33,5 +33,6 @@ apk:zlib
 download:DART
 download:FPC
 download:GROOVY
+download:KOTLIN
 download:SCALA
 npm:typescript

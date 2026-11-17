@@ -79,7 +79,6 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->trustProxies(at: '*');
 
         // Issue #90 -- security headers belong to the response, not to one
         // deployment's nginx config. Appended so it wraps every route,

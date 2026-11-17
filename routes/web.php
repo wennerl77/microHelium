@@ -44,8 +44,12 @@ use Illuminate\Support\Facades\Schema;
 |--------------------------------------------------------------------------
 */
 
-// Home with statistics
-Route::get('/', [HomeController::class, 'index']);
+// Entry point: authenticated users go to /home, guests go straight to /login
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('home')
+        : redirect()->route('login');
+});
 
 Route::get('/home', [HomeController::class, 'index'])->middleware('auth')->name('home');
 
@@ -56,23 +60,17 @@ Route::put('/profile', [ProfileController::class, 'update'])->middleware('auth')
 Route::get('/profile/export', [ProfileController::class, 'export'])->middleware('auth')->name('profile.export');
 
 // Problems (real BOCA-schema Problem model, scoped to the user's contest)
-Route::get('/exercises', [ProblemController::class, 'index'])->name('exercises');
+Route::get('/exercises', [ProblemController::class, 'index'])->middleware('auth')->name('exercises');
 
-Route::get('/exercise/{problem}', [ProblemController::class, 'show'])->name('exercise.show');
+Route::get('/exercise/{problem}', [ProblemController::class, 'show'])->middleware('auth')->name('exercise.show');
 
-// Issue #137: the statement file a BOCA package brings in description/ --
-// imported, stored, and until now never linked from the team's screen, so a
-// problem imported the normal way showed the team "o enunciado ainda nao foi
-// disponibilizado". No auth middleware on purpose: the rule is the contest
-// visibility rule (#135) plus the contest clock, both applied in the
-// controller, so a public contest's archived statements stay readable.
-Route::get('/exercise/{problem}/enunciado', [ProblemController::class, 'statement'])->name('exercise.statement');
+Route::get('/exercise/{problem}/enunciado', [ProblemController::class, 'statement'])->middleware('auth')->name('exercise.statement');
 
 // Scoreboard
-Route::get('/scoreboard', [ScoreboardController::class, 'index'])->name('scoreboard');
+Route::get('/scoreboard', [ScoreboardController::class, 'index'])->middleware('auth')->name('scoreboard');
 
 // Scoreboard Export (CSV)
-Route::get('/scoreboard/export', [ScoreboardController::class, 'export'])->name('scoreboard.export');
+Route::get('/scoreboard/export', [ScoreboardController::class, 'export'])->middleware('auth')->name('scoreboard.export');
 
 // Clarifications
 // Issue #135: a clarification answer is problem information -- "n can be
@@ -98,18 +96,18 @@ Route::get('/submission/{run}/source', [SubmissionController::class, 'source'])-
 // queue (see App\Http\Controllers\SubmitController). Previously this was a
 // stub that wrote a 'pending' row to the legacy exercise_team table and
 // never actually judged anything.
-Route::get('/submit/{problem}', [SubmitController::class, 'create'])->name('exercise.submit');
+Route::get('/submit/{problem}', [SubmitController::class, 'create'])->middleware('auth')->name('exercise.submit');
 
-Route::post('/submit/{problem}', [SubmitController::class, 'store']);
+Route::post('/submit/{problem}', [SubmitController::class, 'store'])->middleware('auth');
 
 // Help page
 Route::get('/ajuda', function () {
     return view('more-info');
-})->name('ajuda');
+})->middleware('auth')->name('ajuda');
 
 Route::get('/wizard', function () {
     return view('wizard');
-})->name('wizard');
+})->middleware('auth')->name('wizard');
 
 // Issue #397 -- o seletor de idioma. Sem `auth`: a tela de entrada tambem
 // oferece o seletor, e quem ainda nao entrou e quem mais precisa ler.
@@ -123,9 +121,15 @@ Route::get('/up', function () {
 // Auth routes
 Route::get('/login', function () {
     return view('auth.login');
-})->name('login');
+})->middleware('guest')->name('login');
 
 Route::post('/login', function () {
+    request()->validate([
+        'email' => ['required_without:login', 'nullable', 'string', 'max:255'],
+        'login' => ['required_without:email', 'nullable', 'string', 'max:255'],
+        'password' => ['required', 'string', 'max:255'],
+    ]);
+
     $loginInput = trim((string) request()->input('email', request()->input('login')));
     $password = (string) request()->input('password');
 
@@ -145,32 +149,25 @@ Route::post('/login', function () {
         ])->withInput(request()->only('email', 'login'));
     }
 
-    // Se a conta estiver desabilitada, checar se pertence a um contest cujo horário já iniciou
     if (! $candidate->is_enabled) {
         $contest = $candidate->contest;
-        $autoAllowed = $contest && $contest->start_time && now()->gte($contest->start_time);
+        $logContestId = $candidate->contest_id ?? $candidate->site?->contest_id;
 
-        if ($autoAllowed) {
-            $candidate->forceFill(['is_enabled' => true])->save();
-        } else {
-            $logContestId = $candidate->contest_id ?? $candidate->site?->contest_id;
-
-            if ($logContestId !== null) {
-                ContestLog::warning(
-                    (int) $logContestId,
-                    'Login bloqueado: conta desabilitada',
-                    ['user_id' => $candidate->user_id]
-                );
-            }
-
-            $errorMessage = ($contest && $contest->start_time && now()->lt($contest->start_time))
-                ? __('Acesso bloqueado: sua maratona iniciará em :time. Aguarde o início ou a liberação da organização.', ['time' => \Carbon\Carbon::parse($contest->start_time)->format('H:i \d\e d/m/Y')])
-                : __('Esta conta esta desabilitada. Procure a organizacao do evento.');
-
-            return back()->withErrors([
-                'email' => $errorMessage,
-            ])->withInput(request()->only('email', 'login'));
+        if ($logContestId !== null) {
+            ContestLog::warning(
+                (int) $logContestId,
+                'Login bloqueado: conta desabilitada',
+                ['user_id' => $candidate->user_id]
+            );
         }
+
+        $errorMessage = ($contest && $contest->start_time && now()->lt($contest->start_time))
+            ? __('Acesso bloqueado: sua maratona iniciará em :time. Aguarde o início ou a liberação da organização.', ['time' => \Carbon\Carbon::parse($contest->start_time)->format('H:i \d\e d/m/Y')])
+            : __('Esta conta esta desabilitada. Procure a organizacao do evento.');
+
+        return back()->withErrors([
+            'email' => $errorMessage,
+        ])->withInput(request()->only('email', 'login'));
     }
 
     // Issue #50: Site::ip_address
@@ -190,7 +187,7 @@ Route::post('/login', function () {
     request()->session()->regenerate();
 
     return redirect()->intended('/home');
-})->middleware('throttle:5,1');
+})->middleware(['guest', 'throttle:5,1']);
 
 // Issue #275 -- o auto-cadastro deixou de entregar sessao.
 //
@@ -213,18 +210,8 @@ Route::post('/logout', function () {
     request()->session()->invalidate();
     request()->session()->regenerateToken();
 
-    return redirect('/');
+    return redirect()->route('login');
 })->name('logout');
-
-Route::get('/password/reset', function () {
-    return view('auth.passwords.email');
-})->name('password.request');
-
-Route::post('/password/email', function () {
-    // This is a placeholder to make the route exist.
-    // A full implementation would send a password reset link.
-    return back()->with('status', 'Password reset link sent!');
-})->name('password.email');
 
 /*
 |--------------------------------------------------------------------------

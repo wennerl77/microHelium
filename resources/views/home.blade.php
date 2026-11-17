@@ -4,8 +4,16 @@
 @section('page-actions')<a href="/wizard" class="button-secondary">{{ __('Primeiros passos') }} <span aria-hidden="true">↗</span></a>@endsection
 @section('content')
 <section class="hero-panel">
-    <div><p class="eyebrow">{{ __('PRONTO PARA O PRÓXIMO DESAFIO?') }}</p><h2>{!! __('Grandes soluções<br>começam com uma tentativa.') !!}</h2><p>{{ __('Escolha um problema, desenvolva sua ideia e acompanhe cada conquista do seu time.') }}</p><a href="/exercises" class="button-primary mt-5">{{ __('Explorar problemas') }} <span aria-hidden="true">→</span></a></div>
-    <div class="hero-art" aria-hidden="true">{ }</div>
+    <div>
+        <p class="eyebrow">{{ __('PRONTO PARA O PRÓXIMO DESAFIO?') }}</p>
+        <h2>{!! __('Grandes soluções<br>começam com uma tentativa.') !!}</h2>
+        <p>{{ __('Escolha um problema, desenvolva sua ideia e acompanhe cada conquista do seu time.') }}</p>
+        <div class="mt-6 flex flex-wrap gap-3">
+            <a href="/exercises" class="button-primary">{{ __('Explorar problemas') }} <span aria-hidden="true">→</span></a>
+            <a href="/scoreboard" class="button-arena">{{ __('Abrir placar') }} <span aria-hidden="true">↗</span></a>
+        </div>
+    </div>
+    <pato-stage></pato-stage>
 </section>
 <dl class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
     @foreach([[__('Problemas disponíveis'), $totalProblems ?? 0], [__('Times participantes'), $totalTeams ?? 0], [__('Soluções enviadas'), $totalSubmissions ?? 0], [__('Soluções aceitas'), $acceptedSubmissions ?? 0]] as [$label, $value])

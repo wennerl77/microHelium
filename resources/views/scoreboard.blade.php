@@ -6,6 +6,41 @@
 
 @section('content')
 <div class="space-y-6">
+    @php $podiumEntries = collect($entries)->take(3)->values(); @endphp
+    @if($podiumEntries->count() >= 3)
+    <section class="surface overflow-hidden" aria-label="{{ __('Pódio da Competição') }}">
+        <div class="border-b border-border px-6 py-4 flex items-center justify-between gap-4">
+            <div>
+                <span class="chapter-label">{{ __('CLASSIFICAÇÃO PRINCIPAL') }}</span>
+                <h2 class="text-lg font-semibold mt-1">{{ __('Pódio da Competição') }}</h2>
+            </div>
+        </div>
+        <div class="turing-podium">
+            @foreach($podiumEntries as $podiumIndex => $podiumEntry)
+                @php
+                    $place = $podiumIndex + 1;
+                    $teamLabel = $podiumEntry['user']->fullname ?? $podiumEntry['user']->username ?? __('Usuario #:id', ['id' => $podiumEntry['user_id']]);
+                @endphp
+                <article class="turing-podium-slot turing-podium-{{ $place }}">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="inline-flex items-center gap-1.5 font-mono text-xs font-bold uppercase tracking-wider {{ $place === 1 ? 'text-accent' : 'text-primary' }}">
+                            @if($place === 1)
+                            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                            @endif
+                            {{ $podiumEntry['rank'] }}<span aria-hidden="true">º</span>
+                        </span>
+                        <span class="font-mono text-xs {{ $place === 1 ? 'text-brand-muted' : 'text-muted-foreground' }}">{{ $podiumEntry['problems_solved'] }} {{ __('Resolvidos') }}</span>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold leading-snug">{{ $teamLabel }}</h3>
+                        <p class="font-mono text-xs mt-1 {{ $place === 1 ? 'text-brand-muted' : 'text-muted-foreground' }}">{{ $podiumEntry['total_time'] }} <span translate="no">min</span></p>
+                    </div>
+                </article>
+            @endforeach
+        </div>
+    </section>
+    @endif
+
     <!-- Main Scoreboard -->
     <div class="rounded-xl border border-border bg-card overflow-hidden">
         <div class="border-b border-border px-6 py-4">
@@ -43,16 +78,12 @@
                 </thead>
                 <tbody class="divide-y divide-border">
                     @forelse ($entries as $index => $entry)
-                    <tr class="hover:bg-muted/50 transition-colors {{ $index < 3 ? 'bg-success-soft' : '' }}">
+                    <tr class="rk-row hover:bg-muted/50 transition-colors {{ $index < 3 ? 'bg-success-soft' : '' }}">
                         <td class="px-4 py-3 text-center">
-                            @if($index == 0)
-                                <span class="rank-number">{{ $entry['rank'] }}</span>
-                            @elseif($index == 1)
-                                <span class="rank-number">{{ $entry['rank'] }}</span>
-                            @elseif($index == 2)
+                            @if($index < 3)
                                 <span class="rank-number">{{ $entry['rank'] }}</span>
                             @else
-                                <span class="font-bold text-muted-foreground">{{ $entry['rank'] }}</span>
+                                <span class="rk-rank-outline" aria-label="{{ $entry['rank'] }}">{{ $entry['rank'] }}</span>
                             @endif
                         </td>
                         <td class="px-4 py-3">

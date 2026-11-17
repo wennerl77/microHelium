@@ -145,7 +145,7 @@ if [ -n "${COMPOSE_PROFILE:-}" ]; then
     PROFILE_ARGS="--profile ${COMPOSE_PROFILE}"
 fi
 docker compose ${PROFILE_ARGS} up -d
-docker compose restart webserver >/dev/null 2>&1 || true
+docker compose ${PROFILE_ARGS} up -d --force-recreate webserver >/dev/null 2>&1 || true
 
 # 9. Verificação de Fumaça com Retry
 echo "Aguardando estabilização dos serviços web..."

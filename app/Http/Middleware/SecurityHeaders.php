@@ -120,22 +120,17 @@ class SecurityHeaders
         // Vite's dev server serves the module graph and opens a websocket for
         // hot reload; neither exists in a built deployment.
         //
-        // The port is a constant, not env('VITE_PORT'), and PHPStan is what
-        // pointed at it. Two reasons, and the second is the real one:
-        // env() outside config/ returns null once `config:cache` has run,
-        // and -- more to the point -- vite.config.js pins the dev server
-        // with `port: 5173, strictPort: true`, so VITE_PORT never moved
-        // anything. Reading it here only created a way for the two halves
-        // to disagree: set VITE_PORT=5174 and the CSP would have allowed
-        // 5174 while Vite still served 5173, blocking the dev server for a
-        // reason nothing would explain. Moving the port means editing both
-        // files, which is the honest cost.
+        // Read via config('app.vite_port') rather than env('VITE_PORT') so
+        // `config:cache` and PHPStan stay happy while staying aligned with
+        // vite.config.js (which honors VITE_PORT for origin and HMR clientPort).
         if (app()->environment('local') && config('app.debug')) {
-            $devServer = 'http://localhost:'.self::VITE_DEV_PORT;
+            $configuredPort = (int) config('app.vite_port', self::VITE_DEV_PORT);
+            $vitePort = $configuredPort > 0 ? $configuredPort : self::VITE_DEV_PORT;
+            $devServer = 'http://localhost:'.$vitePort;
             $script[] = $devServer;
             $style[] = $devServer;
             $connect[] = $devServer;
-            $connect[] = 'ws://localhost:'.self::VITE_DEV_PORT;
+            $connect[] = 'ws://localhost:'.$vitePort;
         }
 
         return implode('; ', [

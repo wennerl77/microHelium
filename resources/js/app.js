@@ -1,9 +1,24 @@
+import '@fontsource/montserrat/800.css';
+import '@fontsource/montserrat/900.css';
+import '@fontsource/space-grotesk/500.css';
+import '@fontsource/space-grotesk/600.css';
+import '@fontsource/space-grotesk/700.css';
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/inter/700.css';
+import '@fontsource/jetbrains-mono/400.css';
+import '@fontsource/jetbrains-mono/500.css';
+import '@fontsource/jetbrains-mono/600.css';
+import '@fontsource/jetbrains-mono/700.css';
+
 import { createApp } from 'vue';
 import { initializeUI } from './ui';
 import { t } from './i18n.js';
 
 // Import components
 import ContestTimer from './components/ContestTimer.vue';
+import PatoStage from './components/PatoStage.vue';
 import ThemeToggle from './components/ThemeToggle.vue';
 
 /*
@@ -60,6 +75,7 @@ import ThemeToggle from './components/ThemeToggle.vue';
  */
 const islands = {
     'contest-timer': ContestTimer,
+    'pato-stage': PatoStage,
     'theme-toggle': ThemeToggle,
 };
 

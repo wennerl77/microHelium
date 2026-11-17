@@ -34,8 +34,6 @@ class ApiRouteHealthSmokeTest extends TestCase
     {
         return [
             'health check' => ['/api/health'],
-            'current contest' => ['/api/contest/current'],
-            'openapi spec' => ['/api/openapi.yaml'],
         ];
     }
 
@@ -51,6 +49,9 @@ class ApiRouteHealthSmokeTest extends TestCase
     {
         return [
             'authenticated user' => ['GET', '/api/user'],
+            'current contest' => ['GET', '/api/contest/current'],
+            'openapi spec' => ['GET', '/api/openapi.yaml'],
+            'clics index' => ['GET', '/api/clics'],
             'contests index' => ['GET', '/api/contests'],
             'problems index' => ['GET', '/api/problems'],
             'runs index' => ['GET', '/api/runs'],

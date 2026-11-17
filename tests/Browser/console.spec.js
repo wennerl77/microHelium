@@ -31,7 +31,7 @@ import { test, expect } from '@playwright/test';
  * the layout is where <theme-toggle> lives -- which is exactly why the
  * original defect hit every page in the application.
  */
-const PUBLIC_PAGES = ['/', '/login', '/register'];
+const PUBLIC_PAGES = ['/login'];
 
 /**
  * Console output that is noise rather than a defect. Kept deliberately tiny

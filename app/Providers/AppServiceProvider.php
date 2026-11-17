@@ -8,6 +8,7 @@ use App\Services\Judgehost\MachineCapabilities;
 use App\Services\Similarity\JplagSimilarityEngine;
 use App\Services\Similarity\SimilarityEngineInterface;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
@@ -23,6 +24,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        $trustedProxies = config('app.trusted_proxies');
+        if (is_string($trustedProxies) && trim($trustedProxies) !== '') {
+            $proxies = trim($trustedProxies) === '*'
+                ? '*'
+                : array_values(array_filter(array_map('trim', explode(',', $trustedProxies))));
+            TrustProxies::at($proxies);
+        }
         // Issue #268 -- o auto-cadastro deixa de comer o orcamento do login.
         //
         // `ThrottleRequests::resolveRequestSignature()` devolve

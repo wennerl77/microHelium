@@ -26,7 +26,7 @@
                 [__('Quais linguagens e limites posso usar?'), __('As linguagens disponíveis são apresentadas no formulário de envio. Confira os limites na página de cada problema; eles podem variar entre problemas e competições.')],
                 [__('Estou com um problema técnico. O que fazer?'), __('Procure a equipe de suporte da competição. Para dúvidas sobre problemas ou regras, entre na sua conta e envie uma clarificação.')],
             ] as [$question, $answer])
-            <details class="py-4"><summary class="font-medium text-sm py-1">{{ $question }}</summary><p class="text-sm text-muted-foreground leading-relaxed mt-3 pl-4">{{ $answer }}</p></details>
+            <details class="turing-faq-details py-4"><summary class="font-medium text-sm py-1"><span>{{ $question }}</span><svg aria-hidden="true" class="turing-faq-chevron h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary><p class="text-sm text-muted-foreground leading-relaxed mt-3 pl-4">{{ $answer }}</p></details>
             @endforeach
         </div></section>
     </div>

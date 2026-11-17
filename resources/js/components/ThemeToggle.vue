@@ -12,7 +12,7 @@ onMounted(() => {
 
 function applyTheme() {
     const meta = document.querySelector('meta[name="theme-color"]')
-    if (meta) meta.setAttribute('content', isDark.value ? '#101a22' : '#f3f6f6')
+    if (meta) meta.setAttribute('content', isDark.value ? '#050e28' : '#ffffff')
     if (isDark.value) {
         document.documentElement.classList.add('dark')
     } else {

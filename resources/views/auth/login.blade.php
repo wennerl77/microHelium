@@ -59,17 +59,6 @@
     >
         {{ __('Entrar') }}
     </button>
-
-    <div class="flex items-center justify-between text-sm">
-        @if (Route::has('password.request'))
-            <a href="{{ route('password.request') }}" class="text-muted-foreground hover:text-foreground transition-colors">
-                {{ __('Esqueceu a senha?') }}
-            </a>
-        @endif
-        <a href="/" class="text-muted-foreground hover:text-foreground transition-colors">
-            {{ __('Voltar ao início') }}
-        </a>
-    </div>
 </form>
 @endsection
 

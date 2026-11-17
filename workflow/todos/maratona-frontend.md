@@ -1,0 +1,10 @@
+- Auto-hospedar as fontes Montserrat (800, 900), Space Grotesk (500, 600, 700), Inter (400-700) e JetBrains Mono (400-700) e configurar tsconfig.json para suporte a TypeScript e CSP/COEP
+- Definir os tokens globais de cores, Dark Arena (.dark), tipografia, raios, grade 56x56, .reading-progress, .chapter-label, foco e reduced-motion de DESIGN.md em resources/css/app.css e atualizar design-tokens.test.js
+- Integrar o SVG oficial do mascote PATO em public/img/pato.svg e implementar resources/js/lib/arena-field.ts com o campo de partículas 3D em canvas e respeito a prefers-reduced-motion
+- Criar o componente Vue PatoStage.vue com órbitas 3D (.orbit--outer, .orbit--equator, .orbit--inner), badges flutuantes, parallax/confete ao clique e registrá-lo em resources/js/app.js
+- Atualizar layouts/app.blade.php, partials/brand.blade.php, partials/theme-init.blade.php, ThemeToggle.vue e errors/layout.blade.php com a identidade visual Turing 2026, barra .reading-progress e cabeçalho sticky
+- Redesenhar layouts/auth.blade.php e views de autenticação no tema Dark Arena com grade 56x56, arena-field/PATO, janela de código com sintaxe oficial e veredito aceito
+- Redesenhar home.blade.php e ContestTimer.vue no tema Dark Arena + Superfície Editorial com o palco PatoStage, painel tabular mono e cartões de estatísticas e submissões
+- Atualizar scoreboard.blade.php com Pódio Leaderboard (2º-1º-3º), destaque do 1º colocado em Navy, numerais .rk-row em outline e badges de veredito em partials/verdict.blade.php
+- Alinhar more-info.blade.php (<details>/<summary> com chevron animado) e substituir emojis genéricos em PolygonDashboard.vue, PolygonWorkspace.vue e PolygonGeneratorBuilder.vue por ícones @lucide/vue
+- Atualizar traduções i18n (es.json e frontend/es.json), escrever testes unitários para os novos componentes/arena-field.ts e validar build, test:frontend, PHPUnit, PHPStan, Pint e Playwright/Axe

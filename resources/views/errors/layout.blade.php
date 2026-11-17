@@ -8,9 +8,10 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
+    <div class="reading-progress" aria-hidden="true"></div>
     <div id="app" class="min-h-screen flex flex-col">
-        <header class="flex justify-between items-center p-6">@include('partials.brand')<theme-toggle></theme-toggle></header>
-        <main class="flex-1 flex items-center justify-center p-6"><div class="max-w-lg text-center">
+        <header class="flex justify-between items-center p-6 border-b border-border">@include('partials.brand')<theme-toggle></theme-toggle></header>
+        <main id="main-content" tabindex="-1" class="flex-1 flex items-center justify-center p-6"><div class="max-w-lg text-center">
             <p class="font-mono text-primary text-7xl font-semibold mb-6">@yield('code')</p>
             <h1 class="text-3xl font-semibold tracking-tight mb-4">@yield('title')</h1>
             <p class="text-muted-foreground leading-relaxed mb-8">@yield('message')</p>

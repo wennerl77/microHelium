@@ -22,6 +22,6 @@ return [
     |
     */
 
-    'open' => (bool) env('REGISTRATION_OPEN', true),
+    'open' => (bool) env('REGISTRATION_OPEN', false),
 
 ];
